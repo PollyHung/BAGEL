@@ -188,6 +188,40 @@
 "pancancer"
 
 
+#' @title breakpoint_ids
+#'
+#' @description All Breakpoint IDS
+#'
+#' @format ## breakpoint_ids
+#' \describe{
+#'   \item{breakpoint_ids}{breakpoint_ids}
+#' }
+#' @source <https://www.github.com/PollyHung/BAGEL/docs/breakpoint_ids.txt>
+"breakpoint_ids"
+
+
+#' @title WES
+#'
+#' @description Gencode v47 Whole Exomes
+#'
+#' @format ## WES
+#' \describe{
+#'   \item{breakpoint_ids}{breakpoint_ids}
+#' }
+#' @source <https://www.gencodegenes.org/human/>
+"WES"
+
+
+#' @title WGS
+#'
+#' @description Gencode v47 Whole Genomes
+#'
+#' @format ## WGS
+#' \describe{
+#'   \item{breakpoint_ids}{breakpoint_ids}
+#' }
+#' @source <https://www.gencodegenes.org/human/>
+"WGS"
 
 
 
