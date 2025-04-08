@@ -57,6 +57,8 @@ mergeSegments <- function(seg.path, min_probes = 10) {
 
   # Convert the list back to a data frame
   merged_segments_df <- do.call(rbind, merged_segments)
+  colnames(merged_segments_df) <- c("Sample", "Chromosome", "Start", "End", "Num_Probes", "Log2Ratios")
+  merged_segments_df <- merged_segments_df %>% dplyr::filter(Chromosome %in% c(1:22))
   message(paste0("After merging, ", nrow(merged_segments_df), " segments remain."))
 
   return(merged_segments_df)

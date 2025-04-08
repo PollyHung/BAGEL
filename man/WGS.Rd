@@ -8,7 +8,9 @@
 \subsection{WGS}{
 
 \describe{
-\item{breakpoint_ids}{breakpoint_ids}
+\item{seqnames}{chromosomes}
+\item{ranges}{start-end}
+\item{strand}{* or +/-}
 }
 }
 }
@@ -19,6 +21,6 @@
 WGS
 }
 \description{
-Gencode v47 Whole Genomes
+GRange object, Gencode v47 Whole Genomes
 }
 \keyword{datasets}

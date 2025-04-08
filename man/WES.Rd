@@ -8,7 +8,9 @@
 \subsection{WES}{
 
 \describe{
-\item{breakpoint_ids}{breakpoint_ids}
+\item{seqnames}{chromosomes}
+\item{ranges}{start-end}
+\item{strand}{* or +/-}
 }
 }
 }
@@ -19,6 +21,6 @@
 WES
 }
 \description{
-Gencode v47 Whole Exomes
+GRange object, Gencode v47 Whole Exomes
 }
 \keyword{datasets}

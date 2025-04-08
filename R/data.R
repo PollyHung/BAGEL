@@ -202,11 +202,13 @@
 
 #' @title WES
 #'
-#' @description Gencode v47 Whole Exomes
+#' @description GRange object, Gencode v47 Whole Exomes
 #'
 #' @format ## WES
 #' \describe{
-#'   \item{breakpoint_ids}{breakpoint_ids}
+#'   \item{seqnames}{chromosomes}
+#'   \item{ranges}{start-end}
+#'   \item{strand}{* or +/-}
 #' }
 #' @source <https://www.gencodegenes.org/human/>
 "WES"
@@ -214,16 +216,46 @@
 
 #' @title WGS
 #'
-#' @description Gencode v47 Whole Genomes
+#' @description GRange object, Gencode v47 Whole Genomes
 #'
 #' @format ## WGS
 #' \describe{
-#'   \item{breakpoint_ids}{breakpoint_ids}
+#'   \item{seqnames}{chromosomes}
+#'   \item{ranges}{start-end}
+#'   \item{strand}{* or +/-}
 #' }
 #' @source <https://www.gencodegenes.org/human/>
 "WGS"
 
 
+#' @title cytoband.hg19
+#'
+#' @description Cytoband version hg19
+#'
+#' @format ## cytoband.hg19
+#' \describe{
+#'   \item{chr}{chromosome}
+#'   \item{arm}{chromosome arms}
+#'   \item{start}{arm start}
+#'   \item{end}{arm end}
+#' }
+#' @source <https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/>
+"cytoband.hg19"
+
+
+#' @title cytoband.hg38
+#'
+#' @description Cytoband version hg38
+#'
+#' @format ## cytoband.hg38
+#' \describe{
+#'   \item{chr}{chromosome}
+#'   \item{arm}{chromosome arms}
+#'   \item{start}{arm start}
+#'   \item{end}{arm end}
+#' }
+#' @source <https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/>
+"cytoband.hg38"
 
 
 
