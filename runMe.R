@@ -43,8 +43,8 @@ gaps <- segmentGaps(segments = seg2, genome = "hg38")
 coverage <- percentCoverage(segments = seg2, gaps = gaps, thres = 0.1)
 raw_copyNumber <- calculateCopyNumber(segments = seg2,
                                       breakpoints = breakpoints,
-                                      amp_thres = 0.1,
-                                      del_thres = -0.1,
+                                      amp_thres = 0.25,
+                                      del_thres = -0.25,
                                       runCentromere = TRUE)
 
 
