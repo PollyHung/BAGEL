@@ -7,27 +7,26 @@
 #'   Sample, Arm, Start, End, Log2Ratios
 #' @param gaps A dataframe containing coverage information from segmentGaps function. Must include columns:
 #'   Sample, Arm, gap_length, sequenced_seg_length, total_seg_length, arm_length
-#' @param thres Numeric threshold for amplification/deletion calling. If NULL, uses noise-based thresholds.
-#'   (default = 0.1)
+#' @param amp_thres Numeric threshold for amplification calling (default = 0.1)
+#' @param del_thres Numeric threshold for deletion calling (default = -0.1)
 #' @param noise Optional dataframe containing noise-based thresholds (not currently implemented)
 #'
 #' @return A dataframe containing:
 #' \itemize{
-#'   \item Original segmentation data with coverage metrics
+#'   \item Original segmentation data with merged gap information
+#'   \item Calculated metrics: seg_length, net_seg_coverage, seg_coverage
 #'   \item aneuploid column indicating alteration status ("amplification", "deletion", or "no_change")
-#'   \item Calculated coverage metrics: seg_length, net_seg_coverage, seg_coverage
 #' }
 #'
 #' @examples
 #' \dontrun{
-#' # Using hard threshold
+#' # Using default thresholds
 #' data(segments)
 #' data(gaps)
-#' results <- percentAlt(segments, gaps, thres = 0.15)
+#' results <- percentCoverage(segments, gaps)
 #'
-#' # Using noise threshold (requires implementation)
-#' data(noise_data)
-#' results <- percentAlt(segments, gaps, thres = NULL, noise = noise_data)
+#' # Using custom thresholds
+#' results <- percentCoverage(segments, gaps, amp_thres = 0.2, del_thres = -0.15)
 #' }
 #'
 #' @importFrom dplyr inner_join mutate case_when
@@ -37,6 +36,7 @@ percentCoverage <- function(segments,
                             amp_thres = 0.1,
                             del_thres = -0.1,
                             noise = NULL) {
+  
   # Input validation
   required_seg_cols <- c("Sample", "Arm", "Start", "End", "Log2Ratios")
   required_gap_cols <- c("Sample", "Arm", "gap_length", "sequenced_seg_length",
@@ -61,12 +61,13 @@ percentCoverage <- function(segments,
       seg_coverage = seg_length / total_seg_length
     )
 
-  # Calculate alteration fractions
-  message("Calculating Fraction of Segments being Amp or Del")
-
-  if (!is.null(thres)) {
-    message("Using Hard Threshold: ", thres)
-
+  # Calculate alteration status
+  message("Identifying Amplified/Deleted Segments")
+  
+  if (!is.null(amp_thres) && !is.null(del_thres)) {
+    message("Using hard thresholds - Amplification: ", amp_thres, 
+            ", Deletion: ", del_thres)
+    
     coverage <- coverage %>%
       dplyr::mutate(
         aneuploid = dplyr::case_when(
@@ -76,9 +77,8 @@ percentCoverage <- function(segments,
         )
       )
   } else {
-    message("Using Noise-Based Threshold")
-    if (is.null(noise)) stop("Noise data required when thres = NULL")
-    # Implement noise-based threshold logic here
+    message("Using noise-based thresholds")
+    if (is.null(noise)) stop("Noise data required when using noise-based thresholds")
     stop("Noise-based threshold implementation not yet available")
   }
 

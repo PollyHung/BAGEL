@@ -45,8 +45,8 @@ checkCoverage(GRange = markers, cuts = breakpoints$del, plot_name = "del")
 ## Step 3: Segmentation to Copy Number -----------------------------------------
 raw_copyNumber <- calculateCopyNumber(segments = seg2,
                                       breakpoints = breakpoints,
-                                      amp_thres = 0.1,
-                                      del_thres = -0.1,
+                                      amp_thres = 0.25,
+                                      del_thres = -0.25,
                                       runCentromere = TRUE)
 
 
