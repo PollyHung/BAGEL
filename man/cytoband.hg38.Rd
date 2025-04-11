@@ -22,6 +22,6 @@
 cytoband.hg38
 }
 \description{
-Cytoband version hg38
+Cytoband version hg38, with centromeres
 }
 \keyword{datasets}

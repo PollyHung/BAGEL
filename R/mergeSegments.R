@@ -23,9 +23,10 @@ mergeSegments <- function(seg.path, min_probes = 10) {
   message(paste0("----------Merging Segments with min_probe threshold: ", min_probes, "-------------"))
   ## Read in segments
   seg <- read.delim(seg.path)
-  message(paste0("There are ", table(seg$Num_Probes < min_probes)[["FALSE"]],
+  colnames(seg) <- c("Sample", "Chromosome", "Start", "End", "Num_Probes", "Segment_Mean")
+  message(paste0("There are ", table(seg$Num_Probes < min_probes)[["TRUE"]],
                  " segments with probe number below min probe threshold. ",
-                 "Taking up about ", round((table(seg$Num_Probes < min_probes)[["FALSE"]])/nrow(seg) * 100, digits = 3),
+                 "Taking up about ", round((table(seg$Num_Probes < min_probes)[["TRUE"]])/nrow(seg) * 100, digits = 3),
                  "% of all segments"))
 
   ## Prepare Empty List for Result

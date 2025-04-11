@@ -24,7 +24,7 @@
 #' @import magrittr
 #' @import stringr
 
-processCuts <- function(cuts.path, ## The pathway to the breakpoint file produced from BISUCT3-py3 or from createCuts
+processCuts <- function(cuts.path = NULL, ## The pathway to the breakpoint file produced from BISUCT3-py3 or from createCuts
                         cutoff = 0.98, ## Hard threshold to determine the amplification/ deletion of a segment
                         model = "human", ## Which organism you are using.
                         ref.path = NULL, ## The pathway to the breakpoint file used as supplement reference to your preferencce, or
@@ -38,9 +38,15 @@ processCuts <- function(cuts.path, ## The pathway to the breakpoint file produce
   data("breakpoints", package = "BAGEL")
 
   ## Section 1: User Breakpoints -----------------------------------------------
-  cut <- loadCuts(cuts.path = cuts.path) # Select interested columns
-  cuts <- stringentLenient(bpdf = cut, stringent = stringent) # Collapse by Arm and TelCent for lenient
-  cuts$label <- "user"
+  if(!is.null(cuts.path)){
+    cut <- loadCuts(cuts.path = cuts.path) # Select interested columns
+    cuts <- stringentLenient(bpdf = cut, stringent = stringent) # Collapse by Arm and TelCent for lenient
+    cuts$label <- "user"
+    compiled <- cuts
+  } else {
+    compiled <- NULL
+    warning("No Breakpoint File Provided, you should run BISCUT3-py3 first!")
+  }
 
   ## Section 2: Reference Breakpoints ------------------------------------------
   ## Section 2.1: User provided supplement breakpoint
@@ -50,8 +56,11 @@ processCuts <- function(cuts.path, ## The pathway to the breakpoint file produce
     compared <- compareCuts(reference = ref, breakpoint = cuts, filename = "user_ref_compare")
     ref$label <- "user_ref"
     ref <- ref %>% dplyr::filter(! id %in% cuts$id)
+    compiled <- rbind(compiled, ref)
+  } else {
+    warning("No Reference breakpoint file provided, we recommend you provide one.")
   }
-  compiled <- rbind(cuts, ref)
+
 
   ## Section 2.2: User provided cancer type, use in house supplement from TCGA
   if(!is.null(ref2.type)){
@@ -69,10 +78,11 @@ processCuts <- function(cuts.path, ## The pathway to the breakpoint file produce
     compared <- compareCuts(reference = ref2, breakpoint = cuts, filename = "supplement_ref")
     ref2$label <- "reference"
     ref2 <- ref2 %>% dplyr::filter(! id %in% compiled$id)
+    compiled <- rbind(compiled, ref2)
   } else {
-    message("skip reference breakpoints, use hard thresholds")
+    warning("skip reference breakpoints, use hard thresholds.")
   }
-  compiled <- rbind(compiled, ref2)
+
 
 
   ## Section 3: Hard Threshold -------------------------------------------------

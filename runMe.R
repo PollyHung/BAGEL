@@ -9,17 +9,23 @@ library(ape)
 library(readxl)
 library(regioneR)
 library(RIdeogram)
-library(BAGEL)
+# library(BAGEL)
 library(data.table)
 
 
 ## Step 1: Define File Paths ---------------------------------------------------
-base_dir <- "/Users/polly_hung/Desktop/BAGEL/example/qmh/"
+base_dir <- "/Users/polly_hung/Desktop/BAGEL/example/pooledOV/"
 setwd(base_dir)
-cuts.path <- "all_BISCUT_results.txt"
-ref.path <- "/Users/polly_hung/Desktop/BAGEL/docs/breakpoints/ovarian.txt"
-seg.path <- "QMH_TS_hg38_403.seg"
-bed.file <- "CPOS_812_HPV_EBV_targets_hg38_sorted_merged_mod.bed"
+seg.path <- "pooled_2787.seg"
+
+
+## Step 2: Preprocess the Segments ---------------------------------------------
+segs <- preprocessSeg(seg.path = seg.path,
+                      min_probes = 4,
+                      genome = "hg38")
+
+## Step 3: Create Cuts ---------------------------------------------------------
+
 
 
 ## Step 2: Process the Breakpoints ---------------------------------------------
@@ -37,10 +43,6 @@ checkCoverage(GRange = markers, cuts = breakpoints$del, plot_name = "del")
 
 
 ## Step 3: Segmentation to Copy Number -----------------------------------------
-segments <- mergeSegments(seg.path = seg.path, min_probes = 4)
-seg2 <- annotateArms(segments = segments, genome = "hg38")
-gaps <- segmentGaps(segments = seg2, genome = "hg38")
-coverage <- percentCoverage(segments = seg2, gaps = gaps, thres = 0.1)
 raw_copyNumber <- calculateCopyNumber(segments = seg2,
                                       breakpoints = breakpoints,
                                       amp_thres = 0.1,
@@ -48,5 +50,10 @@ raw_copyNumber <- calculateCopyNumber(segments = seg2,
                                       runCentromere = TRUE)
 
 
-
+## Step 4: Adjust Copy Number based on ...--------------------------------------
+gaps <- segmentGaps(segments = seg2, genome = "hg38")
+coverage <- percentCoverage(segments = seg2,
+                            gaps = gaps,
+                            amp_thres = 0.1,
+                            del_thres = 0.1)
 

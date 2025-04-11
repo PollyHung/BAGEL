@@ -3,3 +3,134 @@ title: "BAGEL!! Breakpoint Based Estimation of Arm-Level Aneuploidy"
 output: pdf_document
 ---
 
+
+## Download the Package from github repository      
+
+```{r}
+devtools::install_github("PollyHung/BAGEL")
+```
+If you haven't install the following packages, please install them as they are required for this package.         
+
+```{r}
+library(magrittr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(GenomicRanges)
+library(ape)
+library(readxl)
+library(regioneR)
+library(RIdeogram)
+library(BAGEL)
+library(data.table)
+```
+
+
+## Define File Paths     
+We recommend that you set up a directory for your job. 
+```{r}
+base_dir <- "/Users/polly_hung/Desktop/BAGEL/example/qmh/"
+setwd(base_dir)
+```
+
+You should have the following files put into that directory: (1) breakpoint file produced by BISCUT3-py3, specified in `cuts.path` parameter; (2) the segmentation file produced by segmentation algorithms at your preference, some examples include FACETS, ABSOLUTE, CBS, ASCAT etc. Here we used FACETS to compute copy number segmentation file. If you have normal samples, it is recommended to segment these files too and input them as references for detecting noise level to determine customized amplification and deletion thresholds. The segmentation file should contain 6 columns: Sample, Chromosome, Start, End, Number of Markers, Seg.CN. You could refer to the [GISTIC2 documentation](https://broadinstitute.github.io/gistic2/) if you need more explanation. (3) If you are using Targeted Sequencing or SNP array, you should also provide the corresponding `bed.file` or `marker.file` to estimate coverage.           
+Optionally, you could provide your own breakpoint reference that has similar format to the one outputted by BISCUT3-py3 algorithm. It should at least contain the following columns: `chr`, `arm`, `cytoband`, `start`, `end`, `direction`, and `telcent` in these exact names.          
+```{r}
+## Mandatory 
+cuts.path <- "all_BISCUT_results.txt" 
+seg.path <- "QMH_TS_hg38_403.seg"
+bed.file <- "CPOS_812_HPV_EBV_targets_hg38_sorted_merged_mod.bed"
+
+## Optional 
+ref.path <- "/Users/polly_hung/Desktop/BAGEL/docs/breakpoints/ovarian.txt"
+```
+
+## Processing the Breakpoints        
+
+There are three layers to the `processCuts` function. There are three layers to the `processCuts` function. The function will first try to find if you have provided a breakpoint file. If you have, it will process the break point file by collapsing it and then recording the collapsed segments into a dataframe called compiled. And then it will determine if you have provided a reference to the breakpoint file. If you have, it will process the reference breakpoint file and append it to the compiled data frame. If you don't, it will skip this step proceeding to step three. For a step three, if you specify the reference cancer type you would like to use, for example, pancancer or ovarian cancer, breast cancer, etc. then it will retrieve the relevant breakpoint file calculated from TCGA data set using the BISCUT3 algorithm and append it to the compiled data frame you have built previously. If you skipped the TCGA reference, you could in last resort, use the hardthresh of 0.95 to define the amplification or deletion threshold of the segment.       
+
+For users using Targeted Sequencing or SNP microarray, we recommend you provide the corresponding bed file or SNP marker file and run `makeMarkers` and supply the output to the `checkCoverage` function to quickly check whether your sequences supports arm-level copy number definition. If you would like to work that out on your own, please feel free to do so, this step is not related to any other steps in this pipeline and is completely fine if you omit it.         
+```{r}
+breakpoints <- processCuts(cuts.path = "all_BISCUT_results.txt",
+                           cutoff = 0.98,
+                           model = "human",
+                           genome = "hg38",
+                           ref.path = ref.path,
+                           ref2.type = "pancancer",
+                           stringent = FALSE)
+
+markers <- makeMarkers(bed_file = bed.file, technique = "TS")
+checkCoverage(GRange = markers, cuts = breakpoints$amp, plot_name = "amp")
+checkCoverage(GRange = markers, cuts = breakpoints$del, plot_name = "del")
+```
+
+
+## Producing the Raw Copy Number        
+
+To begin processing segmentation file, you would need to provide the path to the segmentation file on your local computer and the minimum number of probes you wish to merge. 
+An empty list is prepared to store the merged segments. The function initializes a variable to hold the current segment being processed. The core logic of the function involves iterating through each segment in the dataset: For each segment, the function checks if the current segment has fewer probes than the specified minimum:         
+1. Merging: If the current segment's probe count is below the threshold, it merges the current segment with the next segment by updating the end position, summing the number of probes, and calculating the new mean of the log2 ratios.      
+2. Storing Valid Segments: If the current segment meets the minimum probe requirement, it is saved to the results list, and the current segment is updated to the next segment in the iteration.      
+The function filters the resulting dataframe to include only segments from chromosomes 1 to 22, ensuring that only autosomal data is retained. Finally, it generates a message detailing the total number of segments remaining after the merging process.      
+```{r}
+segments <- mergeSegments(seg.path = seg.path, min_probes = 4)
+```
+
+The annotateArms function is designed to annotate genomic segments with their corresponding chromosome arms. The function iterates through each segment in the provided data frame and perform: (1) centromere check, for segments that potentially cross the centromere (i.e., segments that start in the p-arm and end in the q-arm), the function identifies the appropriate p and q ends. If a segment crosses the centromere, it is split into two daughter segments:
+p-part: This segment retains the original segment's start position and ends at the p-arm's boundary. The number of probes is adjusted based on the proportion of the segment length that falls within the p-arm.
+q-part: This segment starts at the q-arm's boundary and extends to the original segment's end position. The remaining probes are allocated to this segment.
+```{r}
+seg2 <- annotateArms(segments = segments, genome = "hg38")
+```
+
+
+The `calculateCopyNumber` function is designed to analyze genomic segmentation data to identify copy number alterations (CNAs), specifically focusing on amplifications and deletions associated with telomeres and centromeres. Below is a step-by-step explanation of the process and the rationale behind each step.       
+
+#### 1. **Input Requirements**      
+The function requires two main inputs:      
+- **Segmentation Data**: This dataframe should contain columns for sample identifiers, chromosome information, start and end positions of segments, number of probes, log2 ratios, and genomic arms. This data provides the necessary context for assessing copy number changes.      
+- **Breakpoint Data**: This is a list containing:     
+  - `tel_bound`: A dataframe of telomere-bound breakpoints, which includes information about the arm, direction (amplification or deletion), and the genomic range (smallest start and largest end).      
+  - `cent_bound`: (Optional) A dataframe for centromere-bound breakpoints, required if centromere analysis is to be performed.        
+
+#### 2. **Validation of Input Data**      
+Before proceeding with calculations, the function validates the input to ensure that the required components are present. This step is crucial to prevent errors during data processing and to ensure the integrity of the analysis.      
+
+#### 3. **Processing Alterations**      
+The core of the function involves analyzing the segmentation data for amplifications and deletions:     
+- **Filtering and Merging**: The function filters the breakpoints based on their direction (amplifications or deletions) and removes any excluded arms (e.g., those with low confidence). It then merges the filtered breakpoints with the segmentation data. This merging allows us to link the genomic positions of interest with the corresponding log2 ratios.   
+  
+- **Mean Log2 Ratios Calculation**: After merging, the function groups the data by sample and arm, calculating the mean log2 ratios for each group. This step provides a summary measure of the copy number status for each genomic arm across samples.        
+
+#### 4. **Centromere Analysis (if applicable)**       
+If the `runCentromere` parameter is set to TRUE, the function performs a similar analysis for centromeric breakpoints:    
+- It filters and merges centromeric data, allowing for the identification of alterations specifically associated with centromeres. This step is essential for a comprehensive understanding of genomic stability, as centromeres play a critical role in chromosome segregation.     
+
+#### 5. **Combining Results**       
+The results from telomere-bound and centromere-bound analyses are combined into a single dataset. The function ensures that only the most significant alterations are retained by selecting the maximum absolute mean log2 ratio for each arm.      
+
+#### 6. **Output Generation**         
+Finally, the function generates several outputs:      
+- **Summarized Alteration Data**: A dataframe (`seg_total`) detailing the significant CNAs across samples.      
+- **Mean Log2 Ratio Matrix**: A matrix that organizes the mean log2 ratios by genomic arm and sample, facilitating easy access to numerical data.       
+- **Label Matrix**: This indicates the type of alteration (amplification or deletion) for each genomic arm.       
+- **Heatmap Visualization**: A heatmap is created to visually represent the copy number alterations, which helps in identifying patterns across samples quickly.          
+
+```{r}
+raw_copyNumber <- calculateCopyNumber(segments = seg2,
+                                      breakpoints = breakpoints,
+                                      amp_thres = 0.25,
+                                      del_thres = -0.25,
+                                      runCentromere = TRUE)
+```
+
+
+## Adjusting the Raw Copy Number in Reference to ...        
+```{r}
+gaps <- segmentGaps(segments = seg2, genome = "hg38")
+coverage <- percentCoverage(segments = seg2,
+                            gaps = gaps,
+                            amp_thres = 0.25,
+                            del_thres = 0.25)
+```

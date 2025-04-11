@@ -5,7 +5,7 @@
 \title{Process Breakpoint Cut Files}
 \usage{
 processCuts(
-  cuts.path,
+  cuts.path = NULL,
   cutoff = 0.98,
   model = "human",
   ref.path = NULL,

@@ -32,6 +32,8 @@
 #' @export
 annotateArms <- function(segments, genome = "hg38", cytoband = NULL) {
 
+  message("Segmenting the Chromosome Arms by Cytoband, excluding centromeres")
+
   # read in cytoband
   if(genome == "hg38"){
     arms <- BAGEL::cytoband.hg38
