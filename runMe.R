@@ -9,7 +9,7 @@ library(ape)
 library(readxl)
 library(regioneR)
 library(RIdeogram)
-# library(BAGEL)
+library(BAGEL)
 library(data.table)
 
 
