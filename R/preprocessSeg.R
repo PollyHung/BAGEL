@@ -72,16 +72,27 @@ preprocessSeg <- function(segments = segs,
   seg_list[["del_cent"]] <- telcent(direction = "DEL", telcent = "CENT")
 
   ## Define the join segments function
-  joinSegs <- function(segments){
-    segments <- segments %>%
-      dplyr::arrange(Sample, Start) %>%
-      dplyr::select(Sample, Start, End, Status, telcent)
+  joinSegs <- function(segdf,
+                       telcent){
+    ## initiate an empty list
+    results <- list()
+
+    ## Now for each sample
+    for(sample in unique(segdf$Sample)){
+      segdf_slice <- segdf %>% dplyr::filter(Sample == sample)
+      if(sum(grepl(telcent, segdf_slice$telcent)) > 0){
 
 
+      } else {
+        results[[sample]] <- data.frame(Sample = sample, Percent = 0, Start = 0, End = 0)
+      }
+    }
 
+    ## bind the list and return
+    return(do.call(rbind, results))
   }
 
 
 
-}
 
+}
