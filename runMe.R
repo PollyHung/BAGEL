@@ -22,6 +22,9 @@ segs <- checkSegments(segments = segs)
 segs <- annotateArms(segs)
 
 
+## Step 3: Run BISCUT
+
+
 
 ## Step 3: Create Cuts ---------------------------------------------------------
 ## An improved re-implementation of BISCUT algorithm
