@@ -3,6 +3,7 @@
 export(annotateArms)
 export(calculateCopyNumber)
 export(checkCoverage)
+export(checkSegments)
 export(compareCuts)
 export(loadCuts)
 export(makeMarkers)

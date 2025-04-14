@@ -14,18 +14,24 @@ library(data.table)
 
 
 ## Step 1: Define File Paths ---------------------------------------------------
-base_dir <- "/Users/polly_hung/Desktop/BAGEL/example/pooledOV/"
-setwd(base_dir)
-seg.path <- "pooled_2787.seg"
+seg.path <- "example/pooledOV/pooled_2387.seg"
+segs <- read.delim(seg.path)
+
+## Step 2: Check the validity of the segments and Annotate Arm -----------------
+segs <- checkSegments(segments = segs)
+segs <- annotateArms(segs)
+
+
+
+## Step 3: Create Cuts ---------------------------------------------------------
+## An improved re-implementation of BISCUT algorithm
+
 
 
 ## Step 2: Preprocess the Segments ---------------------------------------------
-segs <- preprocessSeg(seg.path = seg.path,
-                      min_probes = 4,
-                      genome = "hg38")
-
-## Step 3: Create Cuts ---------------------------------------------------------
-
+segs <- mergeSegments(seg.path = seg.path, min_probes = 10)
+segs <- annotateArms(segs, genome = "hg38")
+arms <- setdiff(c(paste0(c(1:22), "p"), paste0(c(1:22), "q")), c("13p", "14p", "15p"))
 
 
 ## Step 2: Process the Breakpoints ---------------------------------------------
