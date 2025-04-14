@@ -28,5 +28,14 @@
 "cytoband.hg38"
 
 
-
+#' @title aneu
+#'
+#' @description Aneuploidy dataframe
+#'
+#' @format ## cytoband.hg38
+#' \describe{
+#'   \item{direction}{1, -1, -2, 2}
+#' }
+#' @source NA
+"aneu"
 

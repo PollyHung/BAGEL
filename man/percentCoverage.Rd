@@ -19,17 +19,18 @@ Sample, Arm, Start, End, Log2Ratios}
 \item{gaps}{A dataframe containing coverage information from segmentGaps function. Must include columns:
 Sample, Arm, gap_length, sequenced_seg_length, total_seg_length, arm_length}
 
-\item{noise}{Optional dataframe containing noise-based thresholds (not currently implemented)}
+\item{amp_thres}{Numeric threshold for amplification calling (default = 0.1)}
 
-\item{thres}{Numeric threshold for amplification/deletion calling. If NULL, uses noise-based thresholds.
-(default = 0.1)}
+\item{del_thres}{Numeric threshold for deletion calling (default = -0.1)}
+
+\item{noise}{Optional dataframe containing noise-based thresholds (not currently implemented)}
 }
 \value{
 A dataframe containing:
 \itemize{
-\item Original segmentation data with coverage metrics
+\item Original segmentation data with merged gap information
+\item Calculated metrics: seg_length, net_seg_coverage, seg_coverage
 \item aneuploid column indicating alteration status ("amplification", "deletion", or "no_change")
-\item Calculated coverage metrics: seg_length, net_seg_coverage, seg_coverage
 }
 }
 \description{
@@ -38,14 +39,13 @@ based on log2 ratios and coverage metrics. Supports both fixed thresholds and no
 }
 \examples{
 \dontrun{
-# Using hard threshold
+# Using default thresholds
 data(segments)
 data(gaps)
-results <- percentAlt(segments, gaps, thres = 0.15)
+results <- percentCoverage(segments, gaps)
 
-# Using noise threshold (requires implementation)
-data(noise_data)
-results <- percentAlt(segments, gaps, thres = NULL, noise = noise_data)
+# Using custom thresholds
+results <- percentCoverage(segments, gaps, amp_thres = 0.2, del_thres = -0.15)
 }
 
 }
