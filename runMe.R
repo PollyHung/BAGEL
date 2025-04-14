@@ -14,7 +14,7 @@ library(data.table)
 
 
 ## Step 1: Define File Paths ---------------------------------------------------
-seg.path <- "example/pooledOV/pooled_2391.seg"
+seg.path <- "example/pooledOV/pooled_2387.seg"
 segs <- read.delim(seg.path)
 
 ## Step 2: Check the validity of the segments and Annotate Arm -----------------
