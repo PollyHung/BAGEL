@@ -7,25 +7,48 @@
 #' @param TELCENT A string indicating segments to be considered for merging (e.g., "TEL" or "CENT").
 #' @return A data frame with merged segment information per sample, including Percent, Start, and End.
 #' @export
-joinSegs_merge <- function(segdf, TELCENT) {
-  ## Initiate an empty list to store results for each sample
+
+
+joinSegs <- function(segdf, TELCENT) {
   results <- list()
 
-  ## Define a nested function to join segments
-  joinSegs <- function(df) {
-    ## Return an empty data frame if input is empty
-    if (nrow(df) == 0) return(df)
+  ## Join Segments If they are TELOMERE or CENTROMERE bounded
+  joinSegs_telcent <- function(df){
+
+    if(nrow(df) == 0) {return(df)} ## If there are no rows, return emtpy dataframe
+
+    if(sum(grepl(TELCENT, df$telcent)) == 0){
+      message("No Telomere or Centromere bound header segment found. This is inter-sCNA")
+      ## Write function to join the inter segments
+    }
+
+    if(sum(grepl(TELCENT, df$telcent)) > 0){
+
+    }
+
+  }
+
+
+
+
+
+
+
+  joinSegs_telcent <- function(df) {
+    # if (nrow(df) == 0) {
+    #   message("Empty Dataframe")
+    #   return(df)
+    # }
 
     ## Store the first row for later use
     original_first_row <- df[1, , drop = FALSE]
-
-    ## Return the first row if there is only one row
-    if (nrow(df) == 1) return(original_first_row)
+    if (nrow(df) == 1) {
+      message("Only One Row Detected")
+      return(original_first_row)
+    }
 
     ## Initialize the current row as the first row
     current_row <- df[1, , drop = FALSE]
-
-    ## Iterate through the remaining rows
     for (i in 2:nrow(df)) {
       next_row <- df[i, , drop = FALSE]
 

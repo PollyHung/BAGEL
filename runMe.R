@@ -21,7 +21,6 @@ segs <- read.delim(seg.path)
 segs <- checkSegments(segments = segs)
 segs <- annotateArms(segs)
 
-
 ## Step 3: Run BISCUT
 
 

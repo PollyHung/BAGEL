@@ -19,7 +19,7 @@ preprocessSeg <- function(segments,
                           cytoband = NULL,
                           del_cutoff = -0.25,
                           amp_cutoff = 0.25,
-                          cutoff_SD = 0.25,
+                          cutoff_SD = NULL, ## Try 0.25 if you want to use standard deviation based cutoff
                           result_dir) {
 
   ## Load in the correct arm level coordinate file based on the specified genome
@@ -35,8 +35,9 @@ preprocessSeg <- function(segments,
   }
 
   ## Create the result directory if it does not exist
-  if (!dir.exists(result_dir)) {
-    dir.create(result_dir)
+  if (!dir.exists(file.path(result_dir, "breakpoints"))) {
+    message("Creating Breakpoint File Directory `/breakpoints`")
+    dir.create(file.path(result_dir, "breakpoints"))
   }
 
   ## Filter segments to only include those from the specified chromosome arm
@@ -70,20 +71,20 @@ preprocessSeg <- function(segments,
     ## Filter segments based on the specified direction (AMP or DEL)
     segdf <- segdf %>% dplyr::filter(Status == direction)
 
-    ## Assign telomere or centromere labels based on the arm and direction
+    ## Assign telomere or centromere labels based on the arm and direction and arrange dataframe accordingly
     if (telcent == "TEL") {
       if (grepl("p", arm)) {
-        segdf$telcent <- ifelse(segdf$Start < coord$Start, "TEL", "INTER")
+        segdf$telcent <- ifelse(segdf$Start <= coord$Start, "TEL", "INTER")
       }
       if (grepl("q", arm)) {
-        segdf$telcent <- ifelse(segdf$End > coord$End, "TEL", "INTER")
+        segdf$telcent <- ifelse(segdf$End >= coord$End, "TEL", "INTER")
       }
     } else if (telcent == "CENT") {
       if (grepl("p", arm)) {
-        segdf$telcent <- ifelse(segdf$End > coord$End, "CENT", "INTER")
+        segdf$telcent <- ifelse(segdf$End >= coord$End, "CENT", "INTER")
       }
       if (grepl("q", arm)) {
-        segdf$telcent <- ifelse(segdf$Start < coord$Start, "CENT", "INTER")
+        segdf$telcent <- ifelse(segdf$Start <= coord$Start, "CENT", "INTER")
       }
     }
 
@@ -104,8 +105,8 @@ preprocessSeg <- function(segments,
   seg_list$del_cent <- joinSegs_merge(segdf = seg_list$del_cent, TELCENT = "CENT")
 
   ## Save processed segment data to specified output files
-  write.table(seg_list$amp_tel, file.path(result_dir, paste0(arm, "_amp_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
-  write.table(seg_list$del_tel, file.path(result_dir, paste0(arm, "_del_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
-  write.table(seg_list$amp_cent, file.path(result_dir, paste0(arm, "_amp_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
-  write.table(seg_list$del_cent, file.path(result_dir, paste0(arm, "_del_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(seg_list$amp_tel, file.path(result_dir, "breakpoints", paste0(arm, "_amp_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(seg_list$del_tel, file.path(result_dir, "breakpoints", paste0(arm, "_del_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(seg_list$amp_cent, file.path(result_dir, "breakpoints", paste0(arm, "_amp_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(seg_list$del_cent, file.path(result_dir, "breakpoints", paste0(arm, "_del_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
 }

@@ -28,6 +28,21 @@
 "cytoband.hg38"
 
 
+#' @title cytoband.T2T
+#'
+#' @description Cytoband version T2T, with centromeres
+#'
+#' @format ## cytoband.T2T
+#' \describe{
+#'   \item{chr}{chromosome}
+#'   \item{arm}{chromosome arms}
+#'   \item{start}{arm start}
+#'   \item{end}{arm end}
+#' }
+#' @source <https://github.com/marbl/CHM13?tab=readme-ov-file>
+"cytoband.T2T"
+
+
 #' @title aneu
 #'
 #' @description Aneuploidy dataframe
