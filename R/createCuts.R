@@ -20,7 +20,7 @@
 createCuts <- function(segments = segs,
                        genome = "hg19",
                        cutoff = 0.25,
-                       result_dir = "example/pooledOV/",
+                       result_dir,
                        cytoband = NULL){
 
   ## Load in the correct arm level coordinate file based on the specified genome

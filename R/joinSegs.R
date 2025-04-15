@@ -28,7 +28,8 @@ joinSegs <- function(segments,
                      ncutoff,        # No default
                      telcent,
                      integer = FALSE,
-                     TELCENT) {
+                     TELCENT,
+                     Arm = arm) {
   # Determine direction based on alteration type
   direction <- switch(aneu,
                       "amp" = 1,
@@ -45,14 +46,14 @@ joinSegs <- function(segments,
   }
 
   # Preprocess segments
-  preprocess_seg <- function(segments, arm, coord) {
+  preprocess_seg <- function(segments, Arm, coord) {
     segments %>%
-      dplyr::filter(Chromosome == sub("[pq]$", "", arm)) %>%
+      dplyr::filter(Chromosome == sub("[pq]$", "", Arm)) %>%
       dplyr::mutate(Start = pmax(Start, coord[1]),
                     End = pmin(End, if(length(coord) > 2) coord[4] else coord[2]))
   }
 
-  processed_seg <- preprocess_seg(segments, arm, coord)
+  processed_seg <- preprocess_seg(segments, Arm, coord)
 
   results <- list()
 
@@ -83,7 +84,7 @@ joinSegs <- function(segments,
     }
 
     # Check telomere/centromere alignment
-    arm_type <- ifelse(grepl("p$", arm), "p", "q")
+    arm_type <- ifelse(grepl("p$", Arm), "p", "q")
     if((arm_type == "p" && telcent == "tel" && alt_segments$Start[1] != coord[1]) ||
        (arm_type == "p" && telcent == "cent" && alt_segments$End[nrow(alt_segments)] != coord[2]) ||
        (arm_type == "q" && telcent == "tel" && alt_segments$End[nrow(alt_segments)] != coord[2]) ||

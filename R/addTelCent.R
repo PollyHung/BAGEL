@@ -26,7 +26,8 @@ addTelCent <- function(segments,
                        direction,
                        telcent,
                        Arm,
-                       coord) {  # Added coord parameter
+                       coord,
+                       fuzzy = FALSE) {  # Added coord parameter
   segments <- segments %>% dplyr::filter(Status == direction)
 
   if (telcent == "TEL") {
