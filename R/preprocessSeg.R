@@ -1,9 +1,9 @@
 #' Preprocess Segments Function
 #'
-#' This function preprocesses genomic segments, applying filtering and labeling based on specified cutoffs.
-#' It also identifies segments originating from telomeres or centromeres and joins overlapping segments.
+#' This function preprocesses genomic segments by applying filtering and labeling based on specified cutoffs.
+#' It identifies segments originating from telomeres or centromeres and joins overlapping segments.
 #'
-#' @param segments A data frame containing genomic segments with columns including Arm and Segment_Mean.
+#' @param segments A data frame containing genomic segments with columns including `Arm` and `Segment_Mean`.
 #' @param genome A string specifying the genome version (e.g., "hg38", "hg19"). Default is "hg38".
 #' @param arm A string indicating the chromosome arm to be processed (e.g., "1p", "1q").
 #' @param cytoband Optional; a path to a custom cytoband CSV file.
@@ -11,7 +11,11 @@
 #' @param amp_cutoff Numeric; threshold for labeling segments as amplifications. Default is 0.25.
 #' @param cutoff_SD Numeric; standard deviation used to adjust cutoffs based on segment means.
 #' @param result_dir A string specifying the directory to save output files.
-#' @return None; output files are saved to the specified result directory.
+#'
+#' @return NULL; output files are saved to the specified result directory.
+#'   The files include segments categorized as amplification and deletion
+#'   along with their telomere and centromere assignments.
+#'
 #' @export
 preprocessSeg <- function(arm) {
 

@@ -11,11 +11,17 @@ background(result_dir)
 files are located and where the output background files will be saved.}
 }
 \value{
-None; the function saves two files: one for telomere and one for
-centromere backgrounds in the specified result directory.
+NULL; the function saves two files: one for telomere and one for
+centromere backgrounds in the specified result directory. The function
+outputs messages indicating the progress of file creation.
 }
 \description{
 This function processes breakpoint files generated during preprocessing,
 categorizing them into telomere and centromere segments. It also creates
 a directory to store the output files if it does not already exist.
+}
+\examples{
+# Example usage
+background(result_dir = "path/to/directory")
+
 }

@@ -18,8 +18,8 @@
 #'
 #' @examples
 #' # Example usage
-#' result <- joinSegs(segdf, aneu, coord = coordinates, ncutoff = cutoff,
-#'                    telcent, integer = FALSE, TELCENT)
+#' result <- joinSegs(segdf, aneu = "amp", coord = c(1, 100, 200, 300),
+#'                    ncutoff = 0.5, telcent = "tel", integer = FALSE, TELCENT)
 #'
 #' @export
 joinSegs <- function(segdf,

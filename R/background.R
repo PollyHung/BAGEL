@@ -5,9 +5,16 @@
 #' a directory to store the output files if it does not already exist.
 #'
 #' @param result_dir A string specifying the directory where the breakpoint
-#' files are located and where the output background files will be saved.
-#' @return None; the function saves two files: one for telomere and one for
-#' centromere backgrounds in the specified result directory.
+#'   files are located and where the output background files will be saved.
+#'
+#' @return NULL; the function saves two files: one for telomere and one for
+#'   centromere backgrounds in the specified result directory. The function
+#'   outputs messages indicating the progress of file creation.
+#'
+#' @examples
+#' # Example usage
+#' background(result_dir = "path/to/directory")
+#'
 #' @export
 background <- function(result_dir) {
 

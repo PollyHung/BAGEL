@@ -2,19 +2,46 @@
 % Please edit documentation in R/joinSegs.R
 \name{joinSegs}
 \alias{joinSegs}
-\title{Join Segments Function}
+\title{Join Segments Based on Alteration Type}
 \usage{
-joinSegs(segdf, TELCENT)
+joinSegs(
+  segdf,
+  aneu,
+  coord = coordinates,
+  ncutoff = cutoff,
+  telcent,
+  integer = FALSE,
+  TELCENT
+)
 }
 \arguments{
-\item{segdf}{A data frame containing segment information, including Sample, Start, End, and other numeric columns.}
+\item{segdf}{A dataframe containing segment information with columns for \code{Sample}, \code{Chromosome},
+\code{Start}, \code{End}, \code{Segment_Mean}, and other relevant attributes.}
 
-\item{TELCENT}{A string indicating segments to be considered for merging (e.g., "TEL" or "CENT").}
+\item{aneu}{A character string indicating the alteration type. Options are "amp", "del", "non-del", and "non-amp".}
+
+\item{coord}{A numeric vector of length 4 representing the coordinates of the chromosome arms.}
+
+\item{ncutoff}{A numeric cutoff value used to classify segments based on their \code{Segment_Mean}.}
+
+\item{telcent}{A character string indicating whether to check for 'telomere' or 'centromere' alignment.}
+
+\item{integer}{A logical value indicating whether to return integer lengths or normalized percentages.}
+
+\item{TELCENT}{An additional parameter related to telomere/centromere classification (specific usage not defined).}
 }
 \value{
-A data frame with merged segment information per sample, including Percent, Start, and End.
+A dataframe summarizing the joined segments, including columns for \code{Sample}, \code{percent},
+\code{start}, and \code{end}.
 }
 \description{
-This function processes a data frame of segments, merging them based on specified criteria.
-It looks for TEL or CENT segments and merges them accordingly.
+This function processes genomic segments based on their alteration type (e.g., amplification or deletion),
+joining adjacent segments if the gap between them is less than their combined lengths. It also checks
+for telomere and centromere alignment based on specific coordinates.
+}
+\examples{
+# Example usage
+result <- joinSegs(segdf, aneu = "amp", coord = c(1, 100, 200, 300),
+                   ncutoff = 0.5, telcent = "tel", integer = FALSE, TELCENT)
+
 }

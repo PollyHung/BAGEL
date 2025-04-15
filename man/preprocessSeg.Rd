@@ -4,23 +4,14 @@
 \alias{preprocessSeg}
 \title{Preprocess Segments Function}
 \usage{
-preprocessSeg(
-  segments,
-  genome = "hg19",
-  arm,
-  cytoband = NULL,
-  del_cutoff = -0.25,
-  amp_cutoff = 0.25,
-  cutoff_SD = NULL,
-  result_dir
-)
+preprocessSeg(arm)
 }
 \arguments{
-\item{segments}{A data frame containing genomic segments with columns including Arm and Segment_Mean.}
+\item{arm}{A string indicating the chromosome arm to be processed (e.g., "1p", "1q").}
+
+\item{segments}{A data frame containing genomic segments with columns including \code{Arm} and \code{Segment_Mean}.}
 
 \item{genome}{A string specifying the genome version (e.g., "hg38", "hg19"). Default is "hg38".}
-
-\item{arm}{A string indicating the chromosome arm to be processed (e.g., "1p", "1q").}
 
 \item{cytoband}{Optional; a path to a custom cytoband CSV file.}
 
@@ -33,9 +24,11 @@ preprocessSeg(
 \item{result_dir}{A string specifying the directory to save output files.}
 }
 \value{
-None; output files are saved to the specified result directory.
+NULL; output files are saved to the specified result directory.
+The files include segments categorized as amplification and deletion
+along with their telomere and centromere assignments.
 }
 \description{
-This function preprocesses genomic segments, applying filtering and labeling based on specified cutoffs.
-It also identifies segments originating from telomeres or centromeres and joins overlapping segments.
+This function preprocesses genomic segments by applying filtering and labeling based on specified cutoffs.
+It identifies segments originating from telomeres or centromeres and joins overlapping segments.
 }
