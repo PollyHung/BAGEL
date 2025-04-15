@@ -17,17 +17,22 @@
 #'   along with their telomere and centromere assignments.
 #'
 #' @export
-preprocessSeg <- function(arm, rd = result_dir) {
+preprocessSeg <- function(Segments = segments,
+                          Coords = coords,
+                          Cutoff = cutoff,
+                          Result_dir = result_dir,
+                          arm
+                          ) {
 
   ## Create the result directory if it does not exist
-  if (!dir.exists(file.path(rd, "breakpoints"))) {
+  if (!dir.exists(file.path(Result_dir, "breakpoints"))) {
     message("Creating Breakpoint File Directory `/breakpoints`")
-    dir.create(file.path(rd, "breakpoints"))
+    dir.create(file.path(Result_dir, "breakpoints"))
   }
 
   ## Filter segments to only include those from the specified chromosome arm
-  segdf <- segments %>% dplyr::filter(Arm == arm)
-  coord <- coords %>% dplyr::filter(Arm == arm)
+  segdf <- Segments %>% dplyr::filter(Arm == arm)
+  coord <- Coords %>% dplyr::filter(Arm == arm)
   coordinates <- unname(unlist(coord[, 3:4]))
 
   ## Calculate the length of the chromosome arm
@@ -38,17 +43,17 @@ preprocessSeg <- function(arm, rd = result_dir) {
   }
 
   ## Label segments as AMP, DEL, or NEUTRAL based on calculated cutoffs
-  segdf <- segdf %>% dplyr::mutate(Status = case_when(Segment_Mean <= -cutoff ~ "DEL",
-                                                      Segment_Mean >= cutoff ~ "AMP",
+  segdf <- segdf %>% dplyr::mutate(Status = case_when(Segment_Mean <= -Cutoff ~ "DEL",
+                                                      Segment_Mean >= Cutoff ~ "AMP",
                                                       TRUE ~ "NEUTRAL"))
   message(paste(names(table(segdf$Status)), table(segdf$Status), collapse = ", "))
 
   ## Apply the TELCENT function for both AMP and DEL segments
   seg_list <- list()
-  seg_list[["amp_tel"]] <- addTelCent(segments = segdf, direction = "AMP", telcent = "TEL")
-  seg_list[["del_tel"]] <- addTelCent(segments = segdf, direction = "DEL", telcent = "TEL")
-  seg_list[["amp_cent"]] <- addTelCent(segments = segdf, direction = "AMP", telcent = "CENT")
-  seg_list[["del_cent"]] <- addTelCent(segments = segdf, direction = "DEL", telcent = "CENT")
+  seg_list[["amp_tel"]] <- addTelCent(segments = segdf, Arm = arm, direction = "AMP", telcent = "TEL")
+  seg_list[["del_tel"]] <- addTelCent(segments = segdf, Arm = arm, direction = "DEL", telcent = "TEL")
+  seg_list[["amp_cent"]] <- addTelCent(segments = segdf, Arm = arm, direction = "AMP", telcent = "CENT")
+  seg_list[["del_cent"]] <- addTelCent(segments = segdf, Arm = arm, direction = "DEL", telcent = "CENT")
 
   ## Join overlapping segments using the joinSegs_merge function
   amp_tel <- joinSegs(segments = seg_list$amp_tel, aneu = "AMP", telcent = "TEL", TELCENT = "TEL")
@@ -57,8 +62,8 @@ preprocessSeg <- function(arm, rd = result_dir) {
   del_cent <- joinSegs(segments = seg_list$del_tel, aneu = "DEL", telcent = "CENT", TELCENT = "CENT")
 
   ## Save processed segment data to specified output files
-  write.table(amp_tel, file.path(rd, "breakpoints", paste0(arm, "_amp_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
-  write.table(del_tel, file.path(rd, "breakpoints", paste0(arm, "_del_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
-  write.table(amp_cent, file.path(rd, "breakpoints", paste0(arm, "_amp_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
-  write.table(del_cent, file.path(rd, "breakpoints", paste0(arm, "_del_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(amp_tel, file.path(Result_dir, "breakpoints", paste0(arm, "_amp_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(del_tel, file.path(Result_dir, "breakpoints", paste0(arm, "_del_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(amp_cent, file.path(Result_dir, "breakpoints", paste0(arm, "_amp_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(del_cent, file.path(Result_dir, "breakpoints", paste0(arm, "_del_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
 }
