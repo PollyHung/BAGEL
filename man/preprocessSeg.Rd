@@ -6,7 +6,7 @@
 \usage{
 preprocessSeg(
   segments,
-  genome = "hg38",
+  genome = "hg19",
   arm,
   cytoband = NULL,
   del_cutoff = -0.25,

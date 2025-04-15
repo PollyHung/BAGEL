@@ -14,7 +14,7 @@
 #' @return None; output files are saved to the specified result directory.
 #' @export
 preprocessSeg <- function(segments,
-                          genome = "hg38",
+                          genome = "hg19",
                           arm,
                           cytoband = NULL,
                           del_cutoff = -0.25,
@@ -66,37 +66,12 @@ preprocessSeg <- function(segments,
                                                             TRUE ~ "NEUTRAL"))
   message(paste(names(table(segments$Status)), table(segments$Status), collapse = ", "))
 
-  ## Define a function to determine if segments originate from telomeres or centromeres
-  telcent <- function(segdf = segments, direction, telcent) {
-    ## Filter segments based on the specified direction (AMP or DEL)
-    segdf <- segdf %>% dplyr::filter(Status == direction)
-
-    ## Assign telomere or centromere labels based on the arm and direction and arrange dataframe accordingly
-    if (telcent == "TEL") {
-      if (grepl("p", arm)) {
-        segdf$telcent <- ifelse(segdf$Start <= coord$Start, "TEL", "INTER")
-      }
-      if (grepl("q", arm)) {
-        segdf$telcent <- ifelse(segdf$End >= coord$End, "TEL", "INTER")
-      }
-    } else if (telcent == "CENT") {
-      if (grepl("p", arm)) {
-        segdf$telcent <- ifelse(segdf$End >= coord$End, "CENT", "INTER")
-      }
-      if (grepl("q", arm)) {
-        segdf$telcent <- ifelse(segdf$Start <= coord$Start, "CENT", "INTER")
-      }
-    }
-
-    return(segdf)
-  }
-
   ## Apply the TELCENT function for both AMP and DEL segments
   seg_list <- list()
-  seg_list[["amp_tel"]] <- telcent(direction = "AMP", telcent = "TEL")
-  seg_list[["del_tel"]] <- telcent(direction = "DEL", telcent = "TEL")
-  seg_list[["amp_cent"]] <- telcent(direction = "AMP", telcent = "CENT")
-  seg_list[["del_cent"]] <- telcent(direction = "DEL", telcent = "CENT")
+  seg_list[["amp_tel"]] <- addTelCent(direction = "AMP", telcent = "TEL")
+  seg_list[["del_tel"]] <- addTelCent(direction = "DEL", telcent = "TEL")
+  seg_list[["amp_cent"]] <- addTelCent(direction = "AMP", telcent = "CENT")
+  seg_list[["del_cent"]] <- addTelCent(direction = "DEL", telcent = "CENT")
 
   ## Join overlapping segments using the joinSegs_merge function
   seg_list$amp_tel <- joinSegs_merge(segdf = seg_list$amp_tel, TELCENT = "TEL")
