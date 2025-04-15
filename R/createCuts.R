@@ -1,5 +1,22 @@
-
-
+#' Create Cuts from Genomic Segments
+#'
+#' This function processes genomic segments to create necessary cuts based on specified parameters.
+#' It loads arm-level coordinates for the specified genome and filters segments accordingly.
+#' Additionally, it generates background files for each lineage.
+#'
+#' @param segments A data frame containing genomic segments. Defaults to `segs`.
+#' @param genome A string specifying the genome version (e.g., "hg38", "hg19"). Default is "hg19".
+#' @param cutoff A numeric value used as a threshold for filtering segments. Default is 0.25.
+#' @param result_dir A string specifying the directory to save output files. Default is "example/pooledOV/".
+#' @param cytoband Optional; a path to a custom cytoband CSV file. If provided, overrides the default genome coordinates.
+#'
+#' @return NULL; the function performs processing and saves output files to the specified result directory.
+#'
+#' @examples
+#' # Example usage
+#' createCuts(segments = my_segments, genome = "hg38", cutoff = 0.3, result_dir = "output/")
+#'
+#' @export
 createCuts <- function(segments = segs,
                        genome = "hg19",
                        cutoff = 0.25,
@@ -32,27 +49,13 @@ createCuts <- function(segments = segs,
   segments <- segments %>% dplyr::filter(Arm != "centromere") ## remove segments that are defined in centromere region
 
   ## Preprocess to Create All the Cuts needed
+  message("Create Breakpoints")
   mclapply(unique(segments$Arm), function(i) {
     preprocessSeg(arm = i)
   }, mc.cores = detectCores() - 4)
 
   ## Generate Backgrounds for each lineage
   background(result_dir)
-
-  ## read in the background files and process
-  tel <- read.delim(file.path(result_dir, "backgrounds/background_telomere.txt")) %>% filter_big_small
-  telemp <- tel$percent
-  cent <- read.delim(file.path(result_dir, "backgrounds/background_centromere.txt")) %>% filter_big_small
-  centemp <- cent$percent
-
-  ## Separate the Amp and Del
-  amptel <- tel %>% dplyr::filter(amp_del == "amp"); amptelemp <- amptel$Percent
-  deltel <- tel %>% dplyr::filter(amp_del == "del"); deltelemp <- deltel$Percent
-  ampcent <- cent %>% dplyr::filter(amp_del == "amp"); ampcentemp <- ampcent$Percent
-  delcent <- cent %>% dplyr::filter(amp_del == "del"); delcentemp <- delcent$Percent
-
-  ##
-
 }
 
 
