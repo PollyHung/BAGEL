@@ -1,18 +1,29 @@
 
-library(parallel)
-
-
-
 
 createCuts <- function(segments = segs,
-                       result_dir){
+                       genome = "hg19",
+                       cutoff = 0.25,
+                       result_dir = "example/pooledOV/",
+                       cytoband = NULL){
+
+  ## Load in the correct arm level coordinate file based on the specified genome
+  if (genome == "hg38") {
+    coords <- BAGEL::cytoband.hg38
+  } else if (genome == "hg19") {
+    coords <- BAGEL::cytoband.hg19
+  } else if (!is.null(cytoband)) {
+    coords <- read.csv(cytoband)
+    colnames(coords) <- c("Chromosome", "Arm", "Start", "End")
+  } else {
+    stop("No valid arm-level coordinates provided, exiting")
+  }
 
   ## Define support functions
   filter_big_small <- function(df) {
     df <- df %>%
-      dplyr::filter(Percent >= 0.001) %>%
-      dplyr::filter(Percent <= 0.999) %>%
-      dplyr::arrange(Percent)
+      dplyr::filter(percent >= 0.001) %>%
+      dplyr::filter(percent <= 0.999) %>%
+      dplyr::arrange(percent)
     return(df)
   }
 
@@ -22,7 +33,7 @@ createCuts <- function(segments = segs,
 
   ## Preprocess to Create All the Cuts needed
   mclapply(unique(segments$Arm), function(i) {
-    preprocessSeg(arm = i, result_dir)
+    preprocessSeg(arm = i)
   }, mc.cores = detectCores() - 4)
 
   ## Generate Backgrounds for each lineage
@@ -30,9 +41,9 @@ createCuts <- function(segments = segs,
 
   ## read in the background files and process
   tel <- read.delim(file.path(result_dir, "backgrounds/background_telomere.txt")) %>% filter_big_small
-  telemp <- tel$Percent
+  telemp <- tel$percent
   cent <- read.delim(file.path(result_dir, "backgrounds/background_centromere.txt")) %>% filter_big_small
-  centemp <- cent$Percent
+  centemp <- cent$percent
 
   ## Separate the Amp and Del
   amptel <- tel %>% dplyr::filter(amp_del == "amp"); amptelemp <- amptel$Percent

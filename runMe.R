@@ -6,16 +6,17 @@ library(tidyr)
 library(stringr)
 library(readxl)
 library(BAGEL)
+library(parallel)
 library(data.table)
 
 
 ## Step 1: Define File Paths ---------------------------------------------------
-seg.path <- "example/pooledOV/pooled_2387.seg"
+seg.path <- "example/tcga/TCGA_SNP6_hg19_589.seg"
 segs <- read.delim(seg.path)
 
 ## Step 2: Check the validity of the segments and Annotate Arm -----------------
 segs <- checkSegments(segments = segs)
-segs <- annotateArms(segs)
+segs <- annotateArms(segs, genome = "hg19")
 
 ## Step 3: Run BISCUT
 

@@ -19,7 +19,7 @@
 #' result <- addTelCent(segments, direction = "AMP", telcent = "TEL")
 #'
 #' @export
-addTelCent <- function(segdf = segments, direction, telcent) {
+addTelCent <- function(direction, telcent) {
   ## Filter segments based on the specified direction (AMP or DEL)
   segdf <- segdf %>% dplyr::filter(Status == direction)
 

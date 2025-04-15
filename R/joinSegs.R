@@ -1,112 +1,166 @@
-#' Join Segments Function
+#' Join Segments Based on Alteration Type
 #'
-#' This function processes a data frame of segments, merging them based on specified criteria.
-#' It looks for TEL or CENT segments and merges them accordingly.
+#' This function processes genomic segments based on their alteration type (e.g., amplification or deletion),
+#' joining adjacent segments if the gap between them is less than their combined lengths. It also checks
+#' for telomere and centromere alignment based on specific coordinates.
 #'
-#' @param segdf A data frame containing segment information, including Sample, Start, End, and other numeric columns.
-#' @param TELCENT A string indicating segments to be considered for merging (e.g., "TEL" or "CENT").
-#' @return A data frame with merged segment information per sample, including Percent, Start, and End.
+#' @param segdf A dataframe containing segment information with columns for `Sample`, `Chromosome`,
+#'   `Start`, `End`, `Segment_Mean`, and other relevant attributes.
+#' @param aneu A character string indicating the alteration type. Options are "amp", "del", "non-del", and "non-amp".
+#' @param coord A numeric vector of length 4 representing the coordinates of the chromosome arms.
+#' @param ncutoff A numeric cutoff value used to classify segments based on their `Segment_Mean`.
+#' @param telcent A character string indicating whether to check for 'telomere' or 'centromere' alignment.
+#' @param integer A logical value indicating whether to return integer lengths or normalized percentages.
+#' @param TELCENT An additional parameter related to telomere/centromere classification (specific usage not defined).
+#'
+#' @return A dataframe summarizing the joined segments, including columns for `Sample`, `percent`,
+#'   `start`, and `end`.
+#'
+#' @examples
+#' # Example usage
+#' result <- joinSegs(segdf, aneu, coord = coordinates, ncutoff = cutoff,
+#'                    telcent, integer = FALSE, TELCENT)
+#'
 #' @export
+joinSegs <- function(segdf,
+                     aneu,
+                     coord = coordinates,
+                     ncutoff = cutoff,
+                     telcent,
+                     integer = FALSE,
+                     TELCENT) {
+  # Determine direction based on alteration type
+  direction <- switch(aneu,
+                      "amp" = 1,
+                      "del" = -1,
+                      "non-del" = -2,
+                      "non-amp" = 2,
+                      0)
 
+  # Calculate arm length based on coordinates
+  if(length(coord) == 2) {
+    arm_length <- coord[2] - coord[1] + 1
+  } else {
+    arm_length <- (coord[2] - coord[1] + 1) + (coord[4] - coord[3] + 1)
+  }
 
-joinSegs <- function(segdf, TELCENT) {
+  # Preprocess segments
+  preprocess_seg <- function(segdf, arm, coord) {
+    segdf %>%
+      dplyr::filter(Chromosome == sub("[pq]$", "", arm)) %>%
+      dplyr::mutate(Start = pmax(Start, coord[1]),
+                    End = pmin(End, if(length(coord) > 2) coord[4] else coord[2]))
+  }
+
+  processed_seg <- preprocess_seg(segdf, arm, coord)
+
   results <- list()
 
-  ## Join Segments If they are TELOMERE or CENTROMERE bounded
-  joinSegs_telcent <- function(df){
+  # Main processing loop
+  for(sample in unique(processed_seg$Sample)) {
+    sample_seg <- processed_seg %>% dplyr::filter(Sample == sample)
 
-    if(nrow(df) == 0) {return(df)} ## If there are no rows, return emtpy dataframe
+    # Classify segments
+    classified_seg <- sample_seg %>%
+      dplyr::mutate(
+        status = case_when(
+          aneu == "del" & Segment_Mean <= -ncutoff ~ direction,
+          aneu == "amp" & Segment_Mean >= ncutoff ~ direction,
+          aneu == "non-del" & Segment_Mean > -ncutoff ~ direction,
+          aneu == "non-amp" & Segment_Mean < ncutoff ~ direction,
+          TRUE ~ 0
+        )
+      ) %>%
+      dplyr::select(Start, End, status)
 
-    if(sum(grepl(TELCENT, df$telcent)) == 0){
-      message("No Telomere or Centromere bound header segment found. This is inter-sCNA")
-      ## Write function to join the inter segments
+    # Filter relevant segments
+    alt_segments <- classified_seg %>% dplyr::filter(status == direction)
+
+    # Early exit conditions
+    if(nrow(alt_segments) == 0) {
+      results[[sample]] <- data.frame(percent = 0, start = 0, end = 0)
+      next
     }
 
-    if(sum(grepl(TELCENT, df$telcent)) > 0){
-
+    # Check telomere/centromere alignment
+    arm_type <- ifelse(grepl("p$", arm), "p", "q")
+    if((arm_type == "p" && telcent == "tel" && alt_segments$Start[1] != coord[1]) ||
+       (arm_type == "p" && telcent == "cent" && alt_segments$End[nrow(alt_segments)] != coord[2]) ||
+       (arm_type == "q" && telcent == "tel" && alt_segments$End[nrow(alt_segments)] != coord[2]) ||
+       (arm_type == "q" && telcent == "cent" && alt_segments$Start[1] != coord[1])) {
+      results[[sample]] <- data.frame(percent = 0, start = 0, end = 0)
+      next
     }
 
-  }
+    # Segment joining logic
+    join_segments <- function(segments) {
+      if(nrow(segments) == 1) {
+        return(list(
+          length = segments$End[1] - segments$Start[1] + 1,
+          start = segments$Start[1],
+          end = segments$End[1]
+        ))
+      }
 
+      # Calculate gap lengths
+      calc_gaps <- function(s) {
+        sum(s$Start[-1] - s$End[-nrow(s)] - 1)
+      }
 
+      current_segments <- segments
+      repeat {
+        gaps <- calc_gaps(current_segments)
+        alt_length <- sum(current_segments$End - current_segments$Start + 1)
 
+        if(gaps <= alt_length) break
 
-
-
-
-  joinSegs_telcent <- function(df) {
-    # if (nrow(df) == 0) {
-    #   message("Empty Dataframe")
-    #   return(df)
-    # }
-
-    ## Store the first row for later use
-    original_first_row <- df[1, , drop = FALSE]
-    if (nrow(df) == 1) {
-      message("Only One Row Detected")
-      return(original_first_row)
-    }
-
-    ## Initialize the current row as the first row
-    current_row <- df[1, , drop = FALSE]
-    for (i in 2:nrow(df)) {
-      next_row <- df[i, , drop = FALSE]
-
-      ## Calculate the gap between current and next segment
-      gap <- next_row$Start - current_row$End
-
-      ## Calculate the total length of the merged segments
-      sum_length <- current_row$seqLength + next_row$seqLength
-
-      ## If segments overlap or touch, merge them
-      if (sum_length > gap) {
-        # Merge rows by updating the current row's End and seqLength
-        merged_row <- current_row
-        merged_row$End <- next_row$End
-        merged_row$seqLength <- sum_length
-
-        # Handle numeric columns by summing their values
-        numeric_cols <- names(df)[sapply(df, is.numeric)]
-        numeric_cols <- setdiff(numeric_cols, c("Start", "End", "seqLength"))
-
-        for (col in numeric_cols) {
-          merged_row[[col]] <- current_row[[col]] + next_row[[col]]
+        # Trim from appropriate end based on arm and telcent
+        if((arm_type == "p" && telcent == "tel") || (arm_type == "q" && telcent == "cent")) {
+          current_segments <- current_segments[-nrow(current_segments), ]
+        } else {
+          current_segments <- current_segments[-1, ]
         }
 
-        # Update the current row to the merged row
-        current_row <- merged_row
-      } else {
-        ## Return the original first row if no merge occurs
-        return(original_first_row)
+        if(nrow(current_segments) == 0) {
+          return(list(percent = 0, start = 0, end = 0))
+        }
       }
+
+      list(
+        length = current_segments$End[nrow(current_segments)] - current_segments$Start[1] + 1,
+        start = current_segments$Start[1],
+        end = current_segments$End[nrow(current_segments)]
+      )
     }
 
-    ## Return the final merged row
-    return(current_row)
-  }
+    joined <- join_segments(alt_segments)
 
-  ## Process each unique sample in the data frame
-  for (sample in unique(segdf$Sample)) {
+    # Convert to percentages if needed
+    if(!integer) {
+      start_norm <- (joined$start - coord[1]) / arm_length
+      end_norm <- (joined$end - coord[1]) / arm_length
+      percent_norm <- joined$length / arm_length
 
-    ## Slice the data frame for the current sample and calculate sequenced length
-    segdf_slice <- segdf %>%
-      dplyr::filter(Sample == sample) %>%
-      dplyr::mutate(seqLength = End - Start) %>%
-      dplyr::select(Sample, Start, End, seqLength, Num_Probes, Segment_Mean, telcent)
+      # Handle coordinate flipping for certain cases
+      if(!((arm_type == "p" && telcent == "tel") || (arm_type == "q" && telcent == "cent"))) {
+        start_norm <- 1 - end_norm
+        end_norm <- 1 - (joined$start - coord[1]) / arm_length
+      }
 
-    ## Check for presence of TEL or CENT segments
-    if (sum(grepl(TELCENT, segdf_slice$telcent)) > 0) {
-      segdf_slice <- joinSegs(segdf_slice)
-      results[[sample]] <- data.frame(Sample = sample,
-                                      Percent = segdf_slice$seqLength / arm_length,
-                                      Start = segdf_slice$Start / arm_length,
-                                      End = segdf_slice$End / arm_length)
+      results[[sample]] <- data.frame(
+        percent = pmax(0, pmin(1, percent_norm)),
+        start = pmax(0, pmin(1, start_norm)),
+        end = pmax(0, pmin(1, end_norm)))
     } else {
-      ## If no TEL or CENT segments, return zeros for Percent, Start, and End
-      results[[sample]] <- data.frame(Sample = sample, Percent = 0, Start = 0, End = 0)
+      results[[sample]] <- data.frame(
+        percent = joined$length,
+        start = joined$start,
+        end = joined$end
+      )
     }
   }
 
-  ## Combine results into a single data frame and return
-  return(do.call(rbind, results))
+  # Combine results and return
+  result_df <- dplyr::bind_rows(results, .id = "Sample")
+  return(result_df)
 }
