@@ -4,7 +4,7 @@
 \alias{addTelCent}
 \title{Add Telomere or Centromere Labels to Segments}
 \usage{
-addTelCent(segments, direction, telcent, Arm)
+addTelCent(segments, direction, telcent, Arm, coord)
 }
 \arguments{
 \item{segments}{A dataframe containing segment data. It must include columns

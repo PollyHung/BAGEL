@@ -24,8 +24,8 @@
 #' @export
 joinSegs <- function(segments,
                      aneu,
-                     coord = coordinates,
-                     ncutoff = cutoff,
+                     coord,          # No default
+                     ncutoff,        # No default
                      telcent,
                      integer = FALSE,
                      TELCENT) {

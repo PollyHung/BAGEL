@@ -25,12 +25,10 @@
 addTelCent <- function(segments,
                        direction,
                        telcent,
-                       Arm) {
-  ## Filter segments based on the specified direction (AMP or DEL)
+                       Arm,
+                       coord) {  # Added coord parameter
   segments <- segments %>% dplyr::filter(Status == direction)
 
-  ## Assign telomere or centromere labels based on the arm and direction
-  ## Arrange dataframe accordingly
   if (telcent == "TEL") {
     if (grepl("p", Arm)) {
       segments$telcent <- ifelse(segments$Start <= coord$Start, "TEL", "INTER")
@@ -50,6 +48,5 @@ addTelCent <- function(segments,
       segments <- segments %>% dplyr::arrange(Sample, Start)
     }
   }
-
   return(segments)
 }

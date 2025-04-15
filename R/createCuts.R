@@ -48,13 +48,17 @@ createCuts <- function(segments = segs,
   segments <- na.omit(segments)
   segments <- segments %>% dplyr::filter(Arm != "centromere") ## remove segments that are defined in centromere region
 
-  ## Preprocess to Create All the Cuts needed
-  message("Create Breakpoints")
-  mclapply(unique(segments$Arm), function(i) {
-    preprocessSeg(arm = i)
-  }, mc.cores = detectCores() - 4)
+  # Call preprocessSeg with ALL parameters
+  parallel::mclapply(unique(segments$Arm), function(i) {
+    preprocessSeg(
+      Segments = segments,   # Explicitly pass
+      Coords = coords,       # from createCuts
+      Cutoff = cutoff,       # parameters
+      Result_dir = result_dir,
+      arm = i
+    )
+  }, mc.cores = parallel::detectCores() - 4)
 
-  ## Generate Backgrounds for each lineage
   background(rd = result_dir)
 }
 
