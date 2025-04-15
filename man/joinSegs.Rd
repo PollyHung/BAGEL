@@ -5,7 +5,7 @@
 \title{Join Segments Based on Alteration Type}
 \usage{
 joinSegs(
-  segdf,
+  segments,
   aneu,
   coord = coordinates,
   ncutoff = cutoff,
@@ -15,7 +15,7 @@ joinSegs(
 )
 }
 \arguments{
-\item{segdf}{A dataframe containing segment information with columns for \code{Sample}, \code{Chromosome},
+\item{segments}{A dataframe containing segment information with columns for \code{Sample}, \code{Chromosome},
 \code{Start}, \code{End}, \code{Segment_Mean}, and other relevant attributes.}
 
 \item{aneu}{A character string indicating the alteration type. Options are "amp", "del", "non-del", and "non-amp".}
@@ -41,7 +41,7 @@ for telomere and centromere alignment based on specific coordinates.
 }
 \examples{
 # Example usage
-result <- joinSegs(segdf, aneu = "amp", coord = c(1, 100, 200, 300),
+result <- joinSegs(segments, aneu = "amp", coord = c(1, 100, 200, 300),
                    ncutoff = 0.5, telcent = "tel", integer = FALSE, TELCENT)
 
 }

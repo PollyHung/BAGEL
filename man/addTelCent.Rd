@@ -4,17 +4,17 @@
 \alias{addTelCent}
 \title{Add Telomere or Centromere Labels to Segments}
 \usage{
-addTelCent(direction, telcent)
+addTelCent(segments = segdf, direction, telcent)
 }
 \arguments{
+\item{segments}{A dataframe containing segment data. It must include columns
+for \code{Status}, \code{Start}, \code{End}, and \code{Sample}.}
+
 \item{direction}{A character string specifying the direction. It must be either
 "AMP" or "DEL".}
 
 \item{telcent}{A character string that specifies whether to label segments
 as "TEL" (telomere) or "CENT" (centromere).}
-
-\item{segdf}{A dataframe containing segment data. It must include columns
-for \code{Status}, \code{Start}, \code{End}, and \code{Sample}.}
 
 \item{coord}{A numeric vector of length 2 representing the coordinates of the
 telomere and centromere boundaries (for example, \code{c(Start, End)}).}
@@ -32,6 +32,6 @@ The resulting dataframe is arranged according to the specified criteria.
 }
 \examples{
 # Example usage
-result <- addTelCent(segdf = segments, direction = "AMP", telcent = "TEL", coord = c(100, 200), arm = "1q")
+result <- addTelCent(segments = segments, direction = "AMP", telcent = "TEL", coord = c(100, 200), arm = "1q")
 
 }

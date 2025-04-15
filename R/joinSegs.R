@@ -4,7 +4,7 @@
 #' joining adjacent segments if the gap between them is less than their combined lengths. It also checks
 #' for telomere and centromere alignment based on specific coordinates.
 #'
-#' @param segdf A dataframe containing segment information with columns for `Sample`, `Chromosome`,
+#' @param segments A dataframe containing segment information with columns for `Sample`, `Chromosome`,
 #'   `Start`, `End`, `Segment_Mean`, and other relevant attributes.
 #' @param aneu A character string indicating the alteration type. Options are "amp", "del", "non-del", and "non-amp".
 #' @param coord A numeric vector of length 4 representing the coordinates of the chromosome arms.
@@ -18,11 +18,11 @@
 #'
 #' @examples
 #' # Example usage
-#' result <- joinSegs(segdf, aneu = "amp", coord = c(1, 100, 200, 300),
+#' result <- joinSegs(segments, aneu = "amp", coord = c(1, 100, 200, 300),
 #'                    ncutoff = 0.5, telcent = "tel", integer = FALSE, TELCENT)
 #'
 #' @export
-joinSegs <- function(segdf,
+joinSegs <- function(segments,
                      aneu,
                      coord = coordinates,
                      ncutoff = cutoff,
@@ -45,14 +45,14 @@ joinSegs <- function(segdf,
   }
 
   # Preprocess segments
-  preprocess_seg <- function(segdf, arm, coord) {
-    segdf %>%
+  preprocess_seg <- function(segments, arm, coord) {
+    segments %>%
       dplyr::filter(Chromosome == sub("[pq]$", "", arm)) %>%
       dplyr::mutate(Start = pmax(Start, coord[1]),
                     End = pmin(End, if(length(coord) > 2) coord[4] else coord[2]))
   }
 
-  processed_seg <- preprocess_seg(segdf, arm, coord)
+  processed_seg <- preprocess_seg(segments, arm, coord)
 
   results <- list()
 

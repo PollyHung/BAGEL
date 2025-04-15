@@ -45,16 +45,16 @@ preprocessSeg <- function(arm) {
 
   ## Apply the TELCENT function for both AMP and DEL segments
   seg_list <- list()
-  seg_list[["amp_tel"]] <- addTelCent(direction = "AMP", telcent = "TEL")
-  seg_list[["del_tel"]] <- addTelCent(direction = "DEL", telcent = "TEL")
-  seg_list[["amp_cent"]] <- addTelCent(direction = "AMP", telcent = "CENT")
-  seg_list[["del_cent"]] <- addTelCent(direction = "DEL", telcent = "CENT")
+  seg_list[["amp_tel"]] <- addTelCent(segments = segdf, direction = "AMP", telcent = "TEL")
+  seg_list[["del_tel"]] <- addTelCent(segments = segdf, direction = "DEL", telcent = "TEL")
+  seg_list[["amp_cent"]] <- addTelCent(segments = segdf, direction = "AMP", telcent = "CENT")
+  seg_list[["del_cent"]] <- addTelCent(segments = segdf, direction = "DEL", telcent = "CENT")
 
   ## Join overlapping segments using the joinSegs_merge function
-  amp_tel <- joinSegs(segdf = seg_list$amp_tel, aneu = "AMP", telcent = "TEL", TELCENT = "TEL")
-  del_tel <- joinSegs(segdf = seg_list$del_tel, aneu = "DEL", telcent = "TEL", TELCENT = "TEL")
-  amp_cent <- joinSegs(segdf = seg_list$del_tel, aneu = "AMP", telcent = "CENT", TELCENT = "CENT")
-  del_cent <- joinSegs(segdf = seg_list$del_tel, aneu = "DEL", telcent = "CENT", TELCENT = "CENT")
+  amp_tel <- joinSegs(segments = seg_list$amp_tel, aneu = "AMP", telcent = "TEL", TELCENT = "TEL")
+  del_tel <- joinSegs(segments = seg_list$del_tel, aneu = "DEL", telcent = "TEL", TELCENT = "TEL")
+  amp_cent <- joinSegs(segments = seg_list$del_tel, aneu = "AMP", telcent = "CENT", TELCENT = "CENT")
+  del_cent <- joinSegs(segments = seg_list$del_tel, aneu = "DEL", telcent = "CENT", TELCENT = "CENT")
 
   ## Save processed segment data to specified output files
   write.table(amp_tel, file.path(result_dir, "breakpoints", paste0(arm, "_amp_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
