@@ -25,6 +25,8 @@ checkSegments <- function(segments) {
     stop("ERROR: The data does not have 6 columns.")
   }
 
+  colnames(segments) <- c("Sample", "Chromosome", "Start", "End", "Num_Probes", "Segment_Mean")
+
   # Check and clean the second column (Chromosome)
   segments$Chromosome <- gsub("^chr|^Chr", "", segments$Chromosome)  # Remove "chr" or "Chr" prefixes
   segments$Chromosome <- as.integer(segments$Chromosome)  # Convert to integer

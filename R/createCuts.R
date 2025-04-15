@@ -49,7 +49,8 @@ createCuts <- function(segments = segs,
   segments <- segments %>% dplyr::filter(Arm != "centromere") ## remove segments that are defined in centromere region
 
   # Call preprocessSeg with ALL parameters
-  parallel::mclapply(unique(segments$Arm), function(i) {
+  chr_arms <- unique(segments$Arm)
+  parallel::mclapply(chr_arms, function(i) {
     preprocessSeg(
       Segments = segments,   # Explicitly pass
       Coords = coords,       # from createCuts

@@ -11,24 +11,21 @@ library(data.table)
 
 
 ## Step 1: Define File Paths ---------------------------------------------------
-seg.path <- "example/tcga/TCGA_SNP6_hg19_589.seg"
+seg.path <- "example/msk/msk_ovary.seg"
 segs <- read.delim(seg.path)
 
 ## Step 2: Check the validity of the segments and Annotate Arm -----------------
 segs <- checkSegments(segments = segs)
 segs <- annotateArms(segs, genome = "hg19")
+plotSegments(segments = segs, all_chrs = TRUE, result_dir = "example/msk/")
 
 ## Step 3: Run BISCUT
-createCuts(segments = segs, result_dir = "example/pooledOV/")
-
-
-
+createCuts(segments = segs, genome = "hg19", cutoff = 0.25, result_dir = "example/pooledOV/")
 
 ## Step 2: Preprocess the Segments ---------------------------------------------
 segs <- mergeSegments(seg.path = seg.path, min_probes = 10)
 segs <- annotateArms(segs, genome = "hg38")
 arms <- setdiff(c(paste0(c(1:22), "p"), paste0(c(1:22), "q")), c("13p", "14p", "15p"))
-
 
 ## Step 2: Process the Breakpoints ---------------------------------------------
 breakpoints <- processCuts(cuts.path = "all_BISCUT_results.txt",
