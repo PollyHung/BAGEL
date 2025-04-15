@@ -4,7 +4,13 @@
 \alias{preprocessSeg}
 \title{Preprocess Segments Function}
 \usage{
-preprocessSeg(arm, rd = result_dir)
+preprocessSeg(
+  Segments = segments,
+  Coords = coords,
+  Cutoff = cutoff,
+  Result_dir = result_dir,
+  arm
+)
 }
 \arguments{
 \item{arm}{A string indicating the chromosome arm to be processed (e.g., "1p", "1q").}
