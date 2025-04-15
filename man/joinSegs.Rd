@@ -4,7 +4,16 @@
 \alias{joinSegs}
 \title{Join Segments Based on Alteration Type}
 \usage{
-joinSegs(segments, aneu, coord, ncutoff, telcent, integer = FALSE, TELCENT)
+joinSegs(
+  segments,
+  aneu,
+  coord,
+  ncutoff,
+  telcent,
+  integer = FALSE,
+  TELCENT,
+  Arm = arm
+)
 }
 \arguments{
 \item{segments}{A dataframe containing segment information with columns for \code{Sample}, \code{Chromosome},

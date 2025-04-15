@@ -8,7 +8,7 @@ createCuts(
   segments = segs,
   genome = "hg19",
   cutoff = 0.25,
-  result_dir = "example/pooledOV/",
+  result_dir,
   cytoband = NULL
 )
 }
