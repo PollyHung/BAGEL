@@ -4,7 +4,7 @@
 \alias{background}
 \title{Create Background Files from Breakpoint Data}
 \usage{
-background(result_dir)
+background(rd = result_dir)
 }
 \arguments{
 \item{result_dir}{A string specifying the directory where the breakpoint
