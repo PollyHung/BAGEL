@@ -19,11 +19,8 @@ segs <- checkSegments(segments = segs)
 segs <- annotateArms(segs, genome = "hg19")
 
 ## Step 3: Run BISCUT
+createCuts(segments = segs, result_dir = "example/pooledOV/")
 
-
-
-## Step 3: Create Cuts ---------------------------------------------------------
-## An improved re-implementation of BISCUT algorithm
 
 
 

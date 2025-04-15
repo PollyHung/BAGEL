@@ -16,17 +16,17 @@
 #' background(result_dir = "path/to/directory")
 #'
 #' @export
-background <- function(result_dir) {
+background <- function(rd = result_dir) {
 
   message("Creating Lineage Specific Backgrounds")
 
   ## Create the result directory if it does not exist
-  if (!dir.exists(file.path(result_dir, "backgrounds"))) {
-    dir.create(file.path(result_dir, "backgrounds"))
+  if (!dir.exists(file.path(rd, "backgrounds"))) {
+    dir.create(file.path(rd, "backgrounds"))
   }
 
   ## Read in all the preprocess produced Breakpoint files
-  files <- list.files(file.path(result_dir, "breakpoints"), full.names = TRUE)
+  files <- list.files(file.path(rd, "breakpoints"), full.names = TRUE)
   breakpoints <- lapply(files, function(x) {
     df <- read.delim(x)
     df$amp_del <- ifelse(grepl("_amp", x), "amp", "del")
@@ -41,10 +41,10 @@ background <- function(result_dir) {
 
   ## Save files
   message("writing telomere-bound backgrounds")
-  write.table(tel, file.path(result_dir, "backgrounds/background_telomere.txt"),
+  write.table(tel, file.path(rd, "backgrounds/background_telomere.txt"),
               sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
   message("writing centromere-bound backgrounds")
-  write.table(cent, file.path(result_dir, "backgrounds/background_centromere.txt"),
+  write.table(cent, file.path(rd, "backgrounds/background_centromere.txt"),
               sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
 
 }

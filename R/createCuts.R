@@ -51,11 +51,11 @@ createCuts <- function(segments = segs,
   ## Preprocess to Create All the Cuts needed
   message("Create Breakpoints")
   mclapply(unique(segments$Arm), function(i) {
-    preprocessSeg(arm = i)
+    preprocessSeg(arm = i, rd = result_dir)
   }, mc.cores = detectCores() - 4)
 
   ## Generate Backgrounds for each lineage
-  background(result_dir)
+  background(rd = result_dir)
 }
 
 

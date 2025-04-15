@@ -17,12 +17,12 @@
 #'   along with their telomere and centromere assignments.
 #'
 #' @export
-preprocessSeg <- function(arm) {
+preprocessSeg <- function(arm, rd = result_dir) {
 
   ## Create the result directory if it does not exist
-  if (!dir.exists(file.path(result_dir, "breakpoints"))) {
+  if (!dir.exists(file.path(rd, "breakpoints"))) {
     message("Creating Breakpoint File Directory `/breakpoints`")
-    dir.create(file.path(result_dir, "breakpoints"))
+    dir.create(file.path(rd, "breakpoints"))
   }
 
   ## Filter segments to only include those from the specified chromosome arm
@@ -57,8 +57,8 @@ preprocessSeg <- function(arm) {
   del_cent <- joinSegs(segments = seg_list$del_tel, aneu = "DEL", telcent = "CENT", TELCENT = "CENT")
 
   ## Save processed segment data to specified output files
-  write.table(amp_tel, file.path(result_dir, "breakpoints", paste0(arm, "_amp_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
-  write.table(del_tel, file.path(result_dir, "breakpoints", paste0(arm, "_del_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
-  write.table(amp_cent, file.path(result_dir, "breakpoints", paste0(arm, "_amp_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
-  write.table(del_cent, file.path(result_dir, "breakpoints", paste0(arm, "_del_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(amp_tel, file.path(rd, "breakpoints", paste0(arm, "_amp_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(del_tel, file.path(rd, "breakpoints", paste0(arm, "_del_tel.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(amp_cent, file.path(rd, "breakpoints", paste0(arm, "_amp_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  write.table(del_cent, file.path(rd, "breakpoints", paste0(arm, "_del_cent.txt")), row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
 }
