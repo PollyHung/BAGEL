@@ -2,36 +2,26 @@
 % Please edit documentation in R/addTelCent.R
 \name{addTelCent}
 \alias{addTelCent}
-\title{Add Telomere or Centromere Labels to Segments}
+\title{Improved addTelCent Function}
 \usage{
 addTelCent(segments, direction, telcent, Arm, coord, fuzzy = FALSE)
 }
 \arguments{
-\item{segments}{A dataframe containing segment data. It must include columns
-for \code{Status}, \code{Start}, \code{End}, and \code{Sample}.}
+\item{segments}{Dataframe with segment data}
 
-\item{direction}{A character string specifying the direction. It must be either
-"AMP" or "DEL".}
+\item{direction}{Character string: "AMP" or "DEL"}
 
-\item{telcent}{A character string that specifies whether to label segments
-as "TEL" (telomere) or "CENT" (centromere).}
+\item{telcent}{Character string: "TEL" or "CENT"}
 
-\item{coord}{A numeric vector of length 2 representing the coordinates of the
-telomere and centromere boundaries (for example, \code{c(Start, End)}).}
+\item{Arm}{Character string indicating chromosome arm}
 
-\item{arm}{A character string indicating the arm of the chromosome (e.g., "1p" or "1q").}
+\item{coord}{List or dataframe with Start and End coordinates}
+
+\item{fuzzy}{Logical for fuzzy matching (default=FALSE)}
 }
 \value{
-A dataframe that includes an additional column \code{telcent} indicating
-the assigned label for each segment.
+Dataframe with telcent column added
 }
 \description{
-This function filters segments based on the specified direction (AMP or DEL)
-and assigns telomere or centromere labels based on the arm and direction.
-The resulting dataframe is arranged according to the specified criteria.
-}
-\examples{
-# Example usage
-result <- addTelCent(segments = segments, direction = "AMP", telcent = "TEL", coord = c(100, 200), arm = "1q")
-
+Add Telomere or Centromere Labels to Segments with proper validation
 }

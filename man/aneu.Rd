@@ -5,7 +5,7 @@
 \alias{aneu}
 \title{aneu}
 \format{
-\subsection{cytoband.hg38}{
+\subsection{aneu}{
 
 \describe{
 \item{direction}{1, -1, -2, 2}

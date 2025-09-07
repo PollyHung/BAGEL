@@ -1,20 +1,46 @@
 Package: BAGEL
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
+Title: Breakpoint-based Arm-level Genomic Evaluation and Linkage
+Version: 2.0.0
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
+      "Polly", "Hung", 
+      email = "polly.hung@example.com", 
       role = c("aut", "cre")
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Description: BAGEL implements a comprehensive pipeline for breakpoint-based 
+    arm-level aneuploidy detection in cancer genomics. Unlike traditional 
+    methods that use fixed percentage thresholds, BAGEL uses biologically 
+    meaningful chromosome arm breakpoints identified through the BISCUT 
+    algorithm to define genomic regions for copy number analysis. This package
+    includes pan-cancer breakpoint data and implements GISTIC-style statistical
+    analysis for robust aneuploidy detection.
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 Depends: 
-    R (>= 3.5)
+    R (>= 4.0.0)
+Imports:
+    dplyr (>= 1.1.0),
+    tidyr (>= 1.3.0),
+    ggplot2 (>= 3.4.0),
+    GenomicRanges (>= 1.50.0),
+    IRanges (>= 2.32.0),
+    S4Vectors (>= 0.36.0),
+    stringr (>= 1.5.0),
+    magrittr (>= 2.0.0),
+    readr (>= 2.1.0),
+    stats,
+    utils
+Suggests:
+    pheatmap (>= 1.0.12),
+    RIdeogram (>= 0.2.2),
+    regioneR (>= 1.30.0),
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    usethis
+VignetteBuilder: knitr

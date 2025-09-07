@@ -2,48 +2,30 @@
 % Please edit documentation in R/calculateCopyNumber.R
 \name{calculateCopyNumber}
 \alias{calculateCopyNumber}
-\title{Calculate Copy Number Alterations from Segmentation Data}
+\title{Improved calculateCopyNumber Function}
 \usage{
 calculateCopyNumber(
   segments,
   breakpoints,
   amp_thres = 0.25,
-  del_thres = 0.25,
+  del_thres = -0.25,
   runCentromere = FALSE
 )
 }
 \arguments{
-\item{segments}{A dataframe containing segmentation data with columns: Sample, Chromosome, Start, End,
-Num_Probes, Log2Ratios, Arm}
+\item{segments}{A dataframe containing segmentation data with required columns}
 
-\item{breakpoints}{A list containing two dataframes:
-- tel_bound: Telomeric breakpoints with columns: arm, direction, smallest_start, largest_end
-- cent_bound: Centromeric breakpoints (required if runCentromere=TRUE)}
+\item{breakpoints}{A list containing tel_bound and cent_bound dataframes}
 
-\item{runCentromere}{Logical indicating whether to analyze centromere-bound events (default=FALSE)}
+\item{amp_thres}{Numeric threshold for amplifications (default=0.25)}
 
-\item{thres}{Numeric threshold for determining amplifications/deletions (default=0.25)}
+\item{del_thres}{Numeric threshold for deletions (default=-0.25)}
+
+\item{runCentromere}{Logical for centromere analysis (default=FALSE)}
 }
 \value{
-A list containing:
-\itemize{
-\item mean_matrix - Matrix of mean log2 ratios (rows=arms, columns=samples)
-\item label_matrix - Matrix of alteration labels (rows=arms, columns=samples)
-\item heatmap - pheatmap object visualization of alterations
-}
+List with mean_matrix, label_matrix, and heatmap
 }
 \description{
-This function identifies telomere and centromere-bound copy number alterations (amplifications and deletions)
-based on segmentation data and predefined breakpoints. It returns summarized results and visualizations.
-}
-\examples{
-\dontrun{
-data(example_segments)
-data(example_breakpoints)
-results <- calculateCopyNumber(segments = example_segments,
-                              breakpoints = example_breakpoints,
-                              thres = 0.3,
-                              runCentromere = TRUE)
-}
-
+Calculate Copy Number Alterations from Segmentation Data with proper GISTIC-style analysis
 }

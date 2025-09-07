@@ -2,31 +2,24 @@
 % Please edit documentation in R/checkCoverage.R
 \name{checkCoverage}
 \alias{checkCoverage}
-\title{Check Coverage of Target Sequencing Markers or SNP Microarray Markers}
+\title{Improved checkCoverage Function}
 \usage{
-checkCoverage(GRange, cuts, stringent = FALSE, plot_name)
+checkCoverage(GRange, cuts, stringent = FALSE, plot_name, result_folder = ".")
 }
 \arguments{
-\item{GRange}{A GRanges object containing genomic ranges to be checked for coverage.}
+\item{GRange}{GRanges object with genomic ranges}
 
-\item{cuts}{A data frame containing cut information, which includes columns for
-chromosome arms and corresponding start and end positions.}
+\item{cuts}{Dataframe with cut information}
 
-\item{stringent}{A logical indicating whether to apply stringent criteria (default is FALSE).}
+\item{stringent}{Logical for stringent criteria (default=FALSE)}
 
-\item{plot_name}{A string representing the name of the plot file (without extension).}
+\item{plot_name}{Character string for plot file name}
 
-\item{result_folder}{A string representing the directory where the coverage plot will be saved.}
+\item{result_folder}{Character string for output directory (default=".")}
 }
 \value{
-A plot visualizing the coverage of genomic ranges against the specified cuts.
+Creates coverage plot files
 }
 \description{
-This function checks the coverage of genomic ranges against specified cuts and
-visualizes the results using an ideogram. It assesses whether the genomic regions
-have sufficient coverage based on the provided cut information and generates a
-visual representation of the coverage across chromosomes.
-}
-\examples{
-checkCoverage(GRange, cuts, result_folder = "path/to/results", plot_name = "coverage_plot")
+Check Coverage with consistent parameters and better error handling
 }
