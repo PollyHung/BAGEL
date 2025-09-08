@@ -158,64 +158,224 @@ plot_chromosome_ideograms <- function(bagel_results,
                 aes(x = -0.4, y = ymin, label = format(end_pos, big.mark = ",")),
                 size = 3, hjust = 1) 
     
-    # Add functional arm overlays
-    if (nrow(chr_arm_defs) > 0) {
-      for (i in 1:nrow(chr_arm_defs)) {
-        arm_def <- chr_arm_defs[i, ]
+    # OLD CODE - COMMENTED OUT (replaced with individual subplot approach)
+    # # Add functional arm overlays
+    # if (nrow(chr_arm_defs) > 0) {
+    #   for (i in 1:nrow(chr_arm_defs)) {
+    #     arm_def <- chr_arm_defs[i, ]
+    #     arm_type <- arm_def$arm_type
+    #     
+    #     # Get the corresponding background arm data
+    #     bg_arm <- plot_data[plot_data$arm == arm_type, ]
+    #     
+    #     if (nrow(bg_arm) > 0) {
+    #       # Calculate functional region position within the arm
+    #       func_start <- arm_def$arm_start
+    #       func_end <- arm_def$arm_end
+    #       
+    #       # Calculate proportional position within the arm
+    #       arm_total_length <- bg_arm$length
+    #       arm_start_genomic <- bg_arm$start_pos
+    #       arm_end_genomic <- bg_arm$end_pos
+    #       
+    #       # Functional region as proportion of total arm
+    #       if (arm_type == "p") {
+    #         # For p arm, functional region starts from genomic start
+    #         func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
+    #         func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
+    #       } else {
+    #         # For q arm, functional region starts from genomic start
+    #         func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
+    #         func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
+    #       }
+    #       
+    #       # Calculate plot coordinates
+    #       arm_height <- bg_arm$ymax - bg_arm$ymin
+    #       func_ymin <- bg_arm$ymin + (func_prop_start * arm_height)
+    #       func_ymax <- bg_arm$ymin + (func_prop_end * arm_height)
+    #       
+    #       # Add functional region overlay
+    #       p <- p + geom_rect(aes(xmin = -0.3, xmax = 0.3, 
+    #                              ymin = func_ymin, ymax = func_ymax),
+    #                          fill = chr_color, alpha = 1.0, color = "black", size = 0.5) + 
+    #         
+    #         # Arm labels
+    #         geom_text(data = plot_data,
+    #                   aes(x = 0, y = (ymin + ymax)/2, label = arm),
+    #                   size = 4, fontface = "bold")
+    #       
+    #       # Add functional start coordinate label in red
+    #       func_coord_y <- if (arm_type == "p") func_ymax else func_ymin
+    #       func_coord_x <- if (arm_type == "p") 0.4 else -0.4
+    #       func_coord_hjust <- if (arm_type == "p") 0 else 1
+    #       func_label <- if (arm_type == "p") func_end else func_start
+    #       
+    #       p <- p + geom_text(aes(x = func_coord_x, y = func_coord_y, 
+    #                              label = format(func_label, big.mark = ",")),
+    #                          size = 3, hjust = func_coord_hjust, color = "red", fontface = "bold")
+    #       
+    #     }
+    #   }
+    # }
+    
+    # NEW APPROACH: Check if chromosome has multiple functional regions
+    chr_arm_defs$label <- paste0(chr_arm_defs$arm, "_",chr_arm_defs$direction)
+    if (nrow(chr_arm_defs) > 1) {
+      # Create individual plots for each functional region
+      individual_plots <- list()
+      chr_arm_defs_split <- split(chr_arm_defs, f = chr_arm_defs$label)
+      
+      individual_plots <- lapply(chr_arm_defs_split, function(arm_def){
         arm_type <- arm_def$arm_type
-        
-        # Get the corresponding background arm data
         bg_arm <- plot_data[plot_data$arm == arm_type, ]
         
-        if (nrow(bg_arm) > 0) {
-          # Calculate functional region position within the arm
-          func_start <- arm_def$arm_start
-          func_end <- arm_def$arm_end
+        # Calculate functional region position within the arm
+        func_start <- arm_def$arm_start
+        func_end <- arm_def$arm_end
+        
+        # Calculate proportional position within the arm
+        arm_total_length <- bg_arm$length
+        arm_start_genomic <- bg_arm$start_pos
+        
+        # Functional region as proportion of total arm
+        if (arm_type == "p") {
+          func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
+          func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
+        } else {
+          func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
+          func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
+        }
+        
+        # Calculate plot coordinates
+        arm_height <- bg_arm$ymax - bg_arm$ymin
+        func_ymin <- bg_arm$ymin + (func_prop_start * arm_height)
+        func_ymax <- bg_arm$ymin + (func_prop_end * arm_height)
+        
+        # Create individual subplot for this functional region
+        subplot <- ggplot() +
+          # Background chromosome arms (semi-transparent)
+          geom_rect(data = plot_data, 
+                    aes(xmin = -0.3, xmax = 0.3, ymin = ymin, ymax = ymax),
+                    fill = chr_color, alpha = 0.5, color = "black", size = 0.5) +
           
-          # Calculate proportional position within the arm
-          arm_total_length <- bg_arm$length
-          arm_start_genomic <- bg_arm$start_pos
-          arm_end_genomic <- bg_arm$end_pos
+          # Add this specific functional overlay
+          geom_rect(aes(xmin = -0.3, xmax = 0.3, ymin = func_ymin, ymax = func_ymax),
+                    fill = chr_color, alpha = 1.0, color = "black", size = 0.5) +
           
-          # Functional region as proportion of total arm
-          if (arm_type == "p") {
-            # For p arm, functional region starts from genomic start
-            func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
-            func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
-          } else {
-            # For q arm, functional region starts from genomic start
-            func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
-            func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
-          }
+          # Coordinate labels
+          geom_text(data = plot_data[plot_data$arm == "p", ],
+                    aes(x = 0.4, y = ymax, label = format(start_pos, big.mark = ",")),
+                    size = 3, hjust = 0) +
+          geom_text(data = plot_data[plot_data$arm == "p", ],
+                    aes(x = 0.4, y = ymin, label = format(end_pos, big.mark = ",")),
+                    size = 3, hjust = 0) +
+          geom_text(data = plot_data[plot_data$arm == "q", ],
+                    aes(x = -0.4, y = ymax, label = format(start_pos, big.mark = ",")),
+                    size = 3, hjust = 1) +
+          geom_text(data = plot_data[plot_data$arm == "q", ],
+                    aes(x = -0.4, y = ymin, label = format(end_pos, big.mark = ",")),
+                    size = 3, hjust = 1) +
           
-          # Calculate plot coordinates
-          arm_height <- bg_arm$ymax - bg_arm$ymin
-          func_ymin <- bg_arm$ymin + (func_prop_start * arm_height)
-          func_ymax <- bg_arm$ymin + (func_prop_end * arm_height)
+          # Arm labels
+          geom_text(data = plot_data,
+                    aes(x = 0, y = (ymin + ymax)/2, label = arm),
+                    size = 4, fontface = "bold") +
           
-          # Add functional region overlay
-          p <- p + geom_rect(aes(xmin = -0.3, xmax = 0.3, 
-                                 ymin = func_ymin, ymax = func_ymax),
-                             fill = chr_color, alpha = 1.0, color = "black", size = 0.5) + 
-            
-            # Arm labels
-            geom_text(data = plot_data,
-                      aes(x = 0, y = (ymin + ymax)/2, label = arm),
-                      size = 4, fontface = "bold")
+          # Functional coordinate label in red
+          geom_text(aes(x = if(arm_type == "p") 0.4 else -0.4, 
+                        y = if(arm_type == "p") func_ymax else func_ymin,
+                        label = format(if(arm_type == "p") func_end else func_start, big.mark = ",")),
+                    hjust = if(arm_type == "p") 0 else 1,
+                    size = 3, color = "red", fontface = "bold") +
+          
+          # Deletion/Amplification caption in lower right
+          geom_text(aes(x = 1.8, y = 0.5, 
+                        label = paste(toupper(substring(arm_def$direction, 1, 1)), 
+                                      substring(arm_def$direction, 2), sep = "")),
+                    hjust = 1, vjust = 0, size = 3, 
+                    color = if(arm_def$direction == "amp") "red" else "blue",
+                    fontface = "bold") +
+          
+          # Styling with subtitle showing the functional region
+          theme_minimal() + 
+          labs(title = paste("Chromosome", chr_num)) +
+          theme(axis.text = element_blank(), 
+                axis.title = element_blank(), 
+                plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+                panel.grid = element_blank()) +
+          xlim(-2, 2) +
+          ylim(0, 10)
+        
+        return(subplot)
+      })
+      
+      
+      # Combine individual plots into a panel
+      if (length(individual_plots) <= 2) {
+        # Horizontal layout for 2 or fewer
+        combined_plot <- wrap_plots(individual_plots, nrow = 1)
+      } else {
+        # Grid layout for more than 2
+        combined_plot <- wrap_plots(individual_plots, ncol = 2)
+      }
+      
+      return(combined_plot)
+      
+    } else if (nrow(chr_arm_defs) == 1) {
+      # Single functional region - use simplified approach
+      arm_def <- chr_arm_defs[1, ]
+      arm_type <- arm_def$arm_type
+      bg_arm <- plot_data[plot_data$arm == arm_type, ]
+      
+      if (nrow(bg_arm) > 0) {
+        # Calculate functional region position within the arm
+        func_start <- arm_def$arm_start
+        func_end <- arm_def$arm_end
+        
+        # Calculate proportional position within the arm
+        arm_total_length <- bg_arm$length
+        arm_start_genomic <- bg_arm$start_pos
+        
+        # Functional region as proportion of total arm
+        if (arm_type == "p") {
+          func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
+          func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
+        } else {
+          func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
+          func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
+        }
+        
+        # Calculate plot coordinates
+        arm_height <- bg_arm$ymax - bg_arm$ymin
+        func_ymin <- bg_arm$ymin + (func_prop_start * arm_height)
+        func_ymax <- bg_arm$ymin + (func_prop_end * arm_height)
+        
+        # Add functional region overlay
+        p <- p + geom_rect(aes(xmin = -0.3, xmax = 0.3, 
+                               ymin = func_ymin, ymax = func_ymax),
+                           fill = chr_color, alpha = 1.0, color = "black", size = 0.5) +
+          
+          # Arm labels
+          geom_text(data = plot_data,
+                    aes(x = 0, y = (ymin + ymax)/2, label = arm),
+                    size = 4, fontface = "bold") +
           
           # Add functional start coordinate label in red
-          func_coord_y <- if (arm_type == "p") func_ymax else func_ymin
-          func_coord_x <- if (arm_type == "p") 0.4 else -0.4
-          func_coord_hjust <- if (arm_type == "p") 0 else 1
-          func_label <- if (arm_type == "p") func_end else func_start
+          geom_text(aes(x = if(arm_type == "p") 0.4 else -0.4, 
+                        y = if(arm_type == "p") func_ymax else func_ymin,
+                        label = format(if(arm_type == "p") func_end else func_start, big.mark = ",")),
+                    hjust = if(arm_type == "p") 0 else 1,
+                    size = 3, color = "red", fontface = "bold") +
           
-          p <- p + geom_text(aes(x = func_coord_x, y = func_coord_y, 
-                                 label = format(func_label, big.mark = ",")),
-                             size = 3, hjust = func_coord_hjust, color = "red", fontface = "bold")
-          
-        }
+          # Deletion/Amplification caption in lower right
+          geom_text(aes(x = 1.8, y = 0.5, 
+                        label = paste(toupper(substring(arm_def$direction, 1, 1)), 
+                                      substring(arm_def$direction, 2), sep = "")),
+                    hjust = 1, vjust = 0, size = 3, 
+                    color = if(arm_def$direction == "amp") "red" else "blue",
+                    fontface = "bold")
       }
-    }
+    } 
     
     # Final plot styling
     p <- p + 
@@ -241,10 +401,31 @@ plot_chromosome_ideograms <- function(bagel_results,
     if (!is.null(plot)) {
       individual_plots[[as.character(chr_num)]] <- plot
       
-      # Save individual plot
+      # Save individual plot with dynamic sizing
       if (save_plots) {
-        ggsave(filename = file.path(ideogram_dir, paste0("chromosome_", chr_num, "_ideogram.png")),
-               plot = plot, width = plot_width, height = plot_height, units = "in", dpi = 300)
+        # Check if this is a combined plot from multiple functional regions
+        if (inherits(plot, "patchwork")) {
+          # Calculate dimensions based on number of functional regions for this chromosome
+          chr_arm_defs_for_chr <- arm_definitions %>% filter(chr_num == !!chr_num)
+          n_subplots <- nrow(chr_arm_defs_for_chr)
+          
+          if (n_subplots <= 2) {
+            # Horizontal layout: nrow = 1
+            save_width <- n_subplots * plot_width  # 6x3 for 2 plots
+            save_height <- plot_height
+          } else {
+            # Grid layout: ncol = 2
+            save_width <- 2 * plot_width  # Always 6 inches width for grid
+            save_height <- plot_height * ceiling(n_subplots / 2)  # 3 * ceiling(n/2)
+          }
+          
+          ggsave(filename = file.path(ideogram_dir, paste0("chromosome_", chr_num, "_ideogram.png")),
+                 plot = plot, width = save_width, height = save_height, units = "in", dpi = 300)
+        } else {
+          # Single plot - use default dimensions
+          ggsave(filename = file.path(ideogram_dir, paste0("chromosome_", chr_num, "_ideogram.png")),
+                 plot = plot, width = plot_width, height = plot_height, units = "in", dpi = 300)
+        }
       }
     }
   }

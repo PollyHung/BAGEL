@@ -13,6 +13,10 @@ library(patchwork)
 data_dir <- "/Users/polly_hung/Desktop/BAGEL/results"
 cancer_types <- list.dirs(data_dir, full.names = FALSE, recursive = FALSE)
 cancer_types <- cancer_types[!grepl("\\.(tsv|csv)$", cancer_types)]
+cancer_types <- setdiff(cancer_types, c("acute_myeloid_leukemia", 
+                                        "kidney_chromophobe", 
+                                        "thymoma", 
+                                        "uveal_melanoma"))
 
 for(cancer in cancer_types){
   
