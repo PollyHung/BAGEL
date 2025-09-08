@@ -230,3 +230,4 @@ cat('source("', file.path(getwd(), "runMe.R"), '")\n\n', sep = "")
 cat("From command line:\n")
 cat("Rscript runMe.R\n\n")
 cat("For other cancer types, modify the 'cancer_type' variable at the top of this script.\n")
+
