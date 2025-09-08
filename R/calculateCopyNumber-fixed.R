@@ -227,6 +227,10 @@ save_analysis_results <- function(results, output_dir, cancer_type) {
   )
   readr::write_tsv(param_df, param_file)
   
+  # Save arm definitions
+  arm_def_file <- file.path(cancer_dir, "arm_definitions.txt")
+  readr::write_tsv(results$arm_definitions, arm_def_file)
+  
   bagel_log(sprintf("Results saved to: %s", cancer_dir), "INFO")
 }
 

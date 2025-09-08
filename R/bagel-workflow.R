@@ -312,6 +312,7 @@ generate_analysis_report <- function(cancer_type, results, output_dir) {
         "",
         "### Analysis Results", 
         "- `BAGEL_results_*/arm_level_summaries.txt` - Detailed arm summaries",
+        "- `BAGEL_results_*/arm_definitions.txt` - Chromosome arm definitions used in analysis",
         "- `BAGEL_results_*/gistic_results.txt` - GISTIC statistical results",
         "- `BAGEL_results_*/significant_arms.txt` - Significant chromosome arms",
         "- `bagel_v2_complete_results.RData` - Complete R results object",

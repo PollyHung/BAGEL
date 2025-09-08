@@ -1,7 +1,5 @@
-#!/usr/bin/env Rscript
-
 # BAGEL v2.0 Demonstration Script
-# Example analysis using ovarian_serous_cystadenocarcinoma data
+# Example analysis using adrenocortical_cancer data
 # This script demonstrates the complete BAGEL v2.0 workflow
 
 library(BAGEL)
@@ -10,18 +8,10 @@ library(readr)
 library(tidyr)
 library(stringr)
 
-cat("=== BAGEL v2.0 Demonstration Script ===\n")
-cat("This script demonstrates BAGEL v2.0 analysis using ovarian_serous_cystadenocarcinoma data\n\n")
-
 # Configuration
-cancer_type <- "ovarian_serous_cystadenocarcinoma"
+cancer_type <- "adrenocortical_cancer"
 data_dir <- "/Users/polly_hung/Desktop/BAGEL/results"
 output_dir <- file.path(data_dir, cancer_type,"demo_analysis")
-
-cat("Configuration:\n")
-cat("- Cancer Type:", cancer_type, "\n")
-cat("- Data Directory:", data_dir, "\n")
-cat("- Output Directory:", output_dir, "\n\n")
 
 # Setup output directory
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
@@ -174,6 +164,29 @@ tryCatch({
         "demo_bagel_results.RData"
     )
     
+    # BAGEL results files (in BAGEL_results_* subdirectory)
+    bagel_results_dir <- list.dirs(output_dir, recursive = FALSE, full.names = FALSE)
+    bagel_results_subdir <- bagel_results_dir[grepl("^BAGEL_results_", bagel_results_dir)]
+    if (length(bagel_results_subdir) > 0) {
+        bagel_subdir_files <- list.files(file.path(output_dir, bagel_results_subdir[1]), full.names = FALSE)
+        cat("\nBAGEL results files (in", bagel_results_subdir[1], "):\n")
+        expected_bagel_files <- c("analysis_parameters.txt", "arm_level_summaries.txt", "arm_definitions.txt", 
+                                 "gistic_results.txt", "significant_arms.txt", "stringent_calls.txt")
+        for (file in expected_bagel_files) {
+            if (file %in% bagel_subdir_files) {
+                file_path <- file.path(output_dir, bagel_results_subdir[1], file)
+                file_size <- if (file.exists(file_path)) {
+                    paste0("(", round(file.size(file_path) / 1024, 1), " KB)")
+                } else {
+                    "(not found)"
+                }
+                cat("  ✅", file, file_size, "\n")
+            } else {
+                cat("  ❌", file, "(missing)\n")
+            }
+        }
+    }
+    
     cat("\nKey output files:\n")
     for (file in key_files) {
         if (file %in% output_files) {
@@ -230,4 +243,6 @@ cat('source("', file.path(getwd(), "runMe.R"), '")\n\n', sep = "")
 cat("From command line:\n")
 cat("Rscript runMe.R\n\n")
 cat("For other cancer types, modify the 'cancer_type' variable at the top of this script.\n")
+
+
 
