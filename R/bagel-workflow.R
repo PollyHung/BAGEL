@@ -98,6 +98,15 @@ load_segmentation_data <- function(cancer_type, data_dir) {
 #' @export
 get_arm_definitions <- function(cancer_type, breakpoint_data) {
     
+    # Get BISCUT chromosome coordinates for consistent boundaries
+    tryCatch({
+        biscut_coords <- BISCUT::get_chromosome_coordinates()
+        bagel_log("Using BISCUT coordinates for chromosome arm boundaries")
+    }, error = function(e) {
+        warning("Could not load BISCUT coordinates: ", e$message)
+        biscut_coords <- NULL
+    })
+    
     # Try cancer-specific first
     if (cancer_type %in% names(breakpoint_data$cancer_specific_breakpoints)) {
         bagel_log(paste("Using", cancer_type, "specific breakpoints"))
@@ -105,37 +114,68 @@ get_arm_definitions <- function(cancer_type, breakpoint_data) {
         
         # Convert to arm definitions
         if (nrow(cancer_breakpoints) > 0 && "peak_start" %in% names(cancer_breakpoints)) {
-            arm_definitions <- cancer_breakpoints %>%
-                mutate(
-                    chr_num = as.numeric(chr),
-                    arm_type = ifelse(grepl("p$", arm), "p", "q"),
-                    arm_start = case_when(
-                        arm_type == "p" ~ 1,
-                        arm_type == "q" ~ peak_start
-                    ),
-                    arm_end = case_when(
-                        arm_type == "p" ~ peak_end,
-                        arm_type == "q" ~ case_when(
-                            chr_num == 1 ~ 249250621, chr_num == 2 ~ 243199373, chr_num == 3 ~ 198022430,
-                            chr_num == 4 ~ 191154276, chr_num == 5 ~ 180915260, chr_num == 6 ~ 171115067,
-                            chr_num == 7 ~ 159138663, chr_num == 8 ~ 146364022, chr_num == 9 ~ 141213431,
-                            chr_num == 10 ~ 135534747, chr_num == 11 ~ 135006516, chr_num == 12 ~ 133851895,
-                            chr_num == 13 ~ 115169878, chr_num == 14 ~ 107349540, chr_num == 15 ~ 102531392,
-                            chr_num == 16 ~ 90354753, chr_num == 17 ~ 81195210, chr_num == 18 ~ 78077248,
-                            chr_num == 19 ~ 59128983, chr_num == 20 ~ 63025520, chr_num == 21 ~ 48129895,
-                            chr_num == 22 ~ 51304566, TRUE ~ NA_real_
+            
+            if (!is.null(biscut_coords)) {
+                # Use BISCUT coordinates for arm boundaries
+                arm_definitions <- cancer_breakpoints %>%
+                    mutate(
+                        chr_num = as.numeric(chr),
+                        arm_type = ifelse(grepl("p$", arm), "p", "q")
+                    ) %>%
+                    left_join(
+                        biscut_coords %>%
+                            select(chromosome_info, p_start, p_end, q_start, q_end) %>%
+                            rename(chr_num = chromosome_info),
+                        by = "chr_num"
+                    ) %>%
+                    mutate(
+                        arm_start = case_when(
+                            arm_type == "p" ~ p_start,
+                            arm_type == "q" ~ peak_start  # Use functional breakpoint for q arm start
+                        ),
+                        arm_end = case_when(
+                            arm_type == "p" ~ peak_end,   # Use functional breakpoint for p arm end
+                            arm_type == "q" ~ q_end       # Use BISCUT end for q arm
                         )
-                    )
-                ) %>%
-                filter(!is.na(arm_start) & !is.na(arm_end) & arm_start < arm_end) %>%
-                select(arm, chr_num, arm_type, arm_start, arm_end, direction) %>%
-                arrange(chr_num, arm_type)
+                    ) %>%
+                    filter(!is.na(arm_start) & !is.na(arm_end) & arm_start < arm_end) %>%
+                    select(arm, chr_num, arm_type, arm_start, arm_end, direction) %>%
+                    arrange(chr_num, arm_type)
+                
+            } else {
+                # Fallback to original hardcoded coordinates
+                arm_definitions <- cancer_breakpoints %>%
+                    mutate(
+                        chr_num = as.numeric(chr),
+                        arm_type = ifelse(grepl("p$", arm), "p", "q"),
+                        arm_start = case_when(
+                            arm_type == "p" ~ 1,
+                            arm_type == "q" ~ peak_start
+                        ),
+                        arm_end = case_when(
+                            arm_type == "p" ~ peak_end,
+                            arm_type == "q" ~ case_when(
+                                chr_num == 1 ~ 249250621, chr_num == 2 ~ 243199373, chr_num == 3 ~ 198022430,
+                                chr_num == 4 ~ 191154276, chr_num == 5 ~ 180915260, chr_num == 6 ~ 171115067,
+                                chr_num == 7 ~ 159138663, chr_num == 8 ~ 146364022, chr_num == 9 ~ 141213431,
+                                chr_num == 10 ~ 135534747, chr_num == 11 ~ 135006516, chr_num == 12 ~ 133851895,
+                                chr_num == 13 ~ 115169878, chr_num == 14 ~ 107349540, chr_num == 15 ~ 102531392,
+                                chr_num == 16 ~ 90354753, chr_num == 17 ~ 81195210, chr_num == 18 ~ 78077248,
+                                chr_num == 19 ~ 59128983, chr_num == 20 ~ 63025520, chr_num == 21 ~ 48129895,
+                                chr_num == 22 ~ 51304566, TRUE ~ NA_real_
+                            )
+                        )
+                    ) %>%
+                    filter(!is.na(arm_start) & !is.na(arm_end) & arm_start < arm_end) %>%
+                    select(arm, chr_num, arm_type, arm_start, arm_end, direction) %>%
+                    arrange(chr_num, arm_type)
+            }
             
             return(arm_definitions)
         }
     }
     
-    # Fallback to consensus
+    # Fallback to consensus (which now uses BISCUT coordinates)
     bagel_log(paste("Using consensus breakpoints for", cancer_type))
     return(breakpoint_data$consensus_arm_definitions)
 }

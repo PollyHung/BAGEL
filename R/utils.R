@@ -173,7 +173,15 @@ get_breakpoint_data <- function(cancer_type = "consensus", data_type = "arm_defi
       if (!exists("consensus_arm_definitions")) {
         stop("Pan-cancer consensus breakpoint data not found. Please load BAGEL package data.")
       }
-      return(consensus_arm_definitions)
+      
+      # Update consensus arm definitions to use BISCUT coordinates for consistency
+      tryCatch({
+        updated_consensus <- update_arm_definitions_with_biscut(consensus_arm_definitions)
+        return(updated_consensus)
+      }, error = function(e) {
+        warning("Could not update with BISCUT coordinates, using original: ", e$message)
+        return(consensus_arm_definitions)
+      })
     } else if (data_type == "breakpoints") {
       if (!exists("consensus_breakpoints")) {
         stop("Pan-cancer consensus breakpoint data not found. Please load BAGEL package data.")
