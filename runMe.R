@@ -61,13 +61,11 @@ tryCatch({
     }, error = function(e) {
       cat("⚠️ Error processing TCGA BISCUT results:", e$message, "\n")
       cat("Falling back to pre-defined TCGA consensus breakpoints\n")
+      breakpoint_data <- load_breakpoint_data()
       arm_definitions <- get_arm_definitions(tcga_cancer_type, breakpoint_data)
     })
   } ## IF file does not exist, fall back to TCGA breakpoints 
-  
-  # Load Arm Level Information 
-  arm_definitions <- get_arm_definitions(cancer_type, breakpoint_data)
-  
+
   
   cat("=== Step 2: Run main BAGEL function ===\n") # ===========================
   bagel_results <- calculateCopyNumber_fixed(
@@ -156,7 +154,7 @@ tryCatch({
 
 
 # ==============================================================================
-# Chapter 3 - Functionally Defined Aneuploidy 
+# Chapter 2 - Functionally Defined Aneuploidy 
 # ==============================================================================
 
 
