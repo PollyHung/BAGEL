@@ -2,6 +2,8 @@ Package: BAGEL
 Type: Package
 Title: Breakpoint-based Arm-level Genomic Evaluation and Linkage
 Version: 2.0.0
+Author: Polly Hung <polly.hung@example.com>
+Maintainer: Polly Hung <polly.hung@example.com>
 Authors@R: c(
     person(
       "Polly", "Hung", 
@@ -36,9 +38,11 @@ Imports:
     stats,
     utils
 Suggests:
+    BISCUT,
     pheatmap (>= 1.0.12),
     RIdeogram (>= 0.2.2),
     regioneR (>= 1.30.0),
+    parallel,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),

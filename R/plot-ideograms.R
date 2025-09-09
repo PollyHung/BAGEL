@@ -47,20 +47,10 @@ plot_chromosome_ideograms <- function(bagel_results,
   
   # Get unique chromosomes to plot
   chromosomes_to_plot <- sort(unique(arm_definitions$chr_num))
-  
-  # Create chromosome color palette using RColorBrewer
-  if (length(chromosomes_to_plot) <= 8) {
-    chr_colors <- RColorBrewer::brewer.pal(max(3, length(chromosomes_to_plot)), "Set2")
-  } else if (length(chromosomes_to_plot) <= 12) {
-    chr_colors <- RColorBrewer::brewer.pal(length(chromosomes_to_plot), "Set3")
-  } else {
-    # For more than 12 chromosomes, use multiple palettes
-    colors1 <- RColorBrewer::brewer.pal(8, "Set2")
-    colors2 <- RColorBrewer::brewer.pal(8, "Dark2")
-    colors3 <- RColorBrewer::brewer.pal(6, "Set1")
-    chr_colors <- c(colors1, colors2, colors3)[1:length(chromosomes_to_plot)]
-  }
-  names(chr_colors) <- chromosomes_to_plot
+  set.seed(999)
+  chr_colors <- sample(BAGEL::bagel_palette, size = 22, replace = F)
+  names(chr_colors) <- c(1:22)
+  chr_colors <- chr_colors[chromosomes_to_plot]
   
   # Create output directory
   if (save_plots) {
@@ -239,11 +229,11 @@ plot_chromosome_ideograms <- function(bagel_results,
         
         # Functional region as proportion of total arm
         if (arm_type == "p") {
-          func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
+          func_prop_start <- round(1-(func_start - arm_start_genomic) / arm_total_length)
           func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
         } else {
           func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
-          func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
+          func_prop_end <- round(1-(func_end - arm_start_genomic) / arm_total_length)
         }
         
         # Calculate plot coordinates
@@ -338,11 +328,11 @@ plot_chromosome_ideograms <- function(bagel_results,
         
         # Functional region as proportion of total arm
         if (arm_type == "p") {
-          func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
+          func_prop_start <- round(1-(func_start - arm_start_genomic) / arm_total_length)
           func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
         } else {
           func_prop_start <- 1-(func_start - arm_start_genomic) / arm_total_length
-          func_prop_end <- 1-(func_end - arm_start_genomic) / arm_total_length
+          func_prop_end <- round(1-(func_end - arm_start_genomic) / arm_total_length)
         }
         
         # Calculate plot coordinates
@@ -374,6 +364,7 @@ plot_chromosome_ideograms <- function(bagel_results,
                     hjust = 1, vjust = 0, size = 3, 
                     color = if(arm_def$direction == "amp") "red" else "blue",
                     fontface = "bold")
+        
       }
     } 
     
