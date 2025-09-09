@@ -22,8 +22,6 @@ dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 setup_bagel_logging(log_level = "INFO", log_file = file.path(output_dir, "analysis.log"))
 
 
-
-
 # ==============================================================================
 # Prologue - Creation of Breakpoints
 # ==============================================================================
@@ -147,15 +145,34 @@ tryCatch({
   summarize_bagel_outputs(output_dir = output_dir)
  
 }, error = function(e) {
-  cat("❌ ERROR during demonstration:\n")
+  cat("❌ ERROR during BAGEL\n")
   cat("Error message:", e$message, "\n")
   stop(e)
 })
 
 
 # ==============================================================================
-# Chapter 2 - Functionally Defined Aneuploidy 
+# Chapter 2 - Cross Validation Against TCGA 
 # ==============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
