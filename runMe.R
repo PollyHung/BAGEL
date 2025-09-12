@@ -13,9 +13,9 @@ library(stringr)
 library(patchwork)
 
 # Set Global Control 
-data_dir <- "/Users/polly_hung/Desktop/BAGEL/validation"
-cancer_type <- "ovarian_serous_cystadenocarcinoma"
-output_dir <- file.path(data_dir, cancer_type, "bagel_v2_analysis")
+data_dir <- "/Users/polly_hung/Desktop/BAGEL/data/biscut+bagel"
+cancer_type <- "tcga_ovarian_serous_cystadenocarcinoma"
+output_dir <- file.path(data_dir, cancer_type, "bagel_v3_analysis")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Set Logging Information 
@@ -97,18 +97,8 @@ tryCatch({
   
   # Analyze alteration frequencies
   alteration_summary <- matrices$long_format %>%
-    dplyr::mutate(Alteration_Type = case_when(
-      Copy_Number >= 0.5 ~ "Amplification",
-      Copy_Number <= -0.5 ~ "Deletion",
-      TRUE ~ "Normal")) %>%
-    count(Arm, Alteration_Type) 
-  missing <- setdiff(c("Normal", "Amplification", "Deletion"), unique(alteration_summary$Alteration_Type))
-  missing_df <- data.frame(Arm = unique(alteration_summary$Arm), 
-                           Alteration_Type = rep(missing, length(unique(alteration_summary$Arm))), 
-                           n = rep(0, length(unique(alteration_summary$Arm))))  
-  alteration_summary <- rbind(alteration_summary, missing_df)
-  alteration_summary <- alteration_summary %>% 
-    pivot_wider(names_from = Alteration_Type, values_from = n, values_fill = 0) %>% 
+    count(Arm, Call_Label) %>% 
+    pivot_wider(names_from = Call_Label, values_from = n, values_fill = 0) %>% 
     dplyr::mutate(Total_Samples = Normal + Amplification + Deletion,
                   Amp_Freq = round(Amplification / Total_Samples * 100, 1),
                   Del_Freq = round(Deletion / Total_Samples * 100, 1),
@@ -151,19 +141,6 @@ tryCatch({
 })
 
 
-# ==============================================================================
-# Chapter 2 - Cross Validation Against TCGA 
-# ==============================================================================
-query_path <- "~/Desktop/BAGEL/validation/ovarian_serous_cystadenocarcinoma/bagel_v2_analysis/BAGEL_results_ovarian_serous_cystadenocarcinoma/arm_definitions.txt"
-ref_cancer <- ""
-results <- analyze_breakpoint_similarity(query_path = query_path,
-                                         reference = ref_cancer,
-                                         output_dir = file.path(data_dir, cancer_type, "similarity_with_"))
-
-
-# ==============================================================================
-# Chapter 3 - Clustering 
-# ==============================================================================
 
 
 

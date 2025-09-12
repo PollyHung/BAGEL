@@ -7,8 +7,8 @@
 calculateCopyNumber_fixed(
   segments,
   breakpoints,
-  amp_threshold = log2(2.5/2),
-  del_threshold = log2(1.5/2),
+  amp_threshold = 0.25,
+  del_threshold = -0.25,
   stringent_threshold = 0.9,
   output_dir = ".",
   cancer_type = "Unknown",

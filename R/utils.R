@@ -97,6 +97,65 @@ validate_and_clean_segments <- function(segments, remove_outliers = TRUE) {
   return(segments_clean)
 }
 
+#' Validate GISTIC2 Parameters
+#'
+#' @param amp_threshold Amplification threshold
+#' @param del_threshold Deletion threshold  
+#' @param stringent_threshold Stringent threshold
+#' @return Validated parameters or throws error
+#' @export
+validate_gistic2_parameters <- function(amp_threshold, del_threshold, stringent_threshold) {
+  # =============================================================================
+  # GISTIC2 Parameter Validation Function - NEW
+  # 
+  # PURPOSE: Ensure parameters follow GISTIC2 conventions and catch common errors
+  #
+  # GISTIC2 Standards:
+  # - Amplification threshold should be positive (typically 0.25)
+  # - Deletion threshold should be negative (typically -0.25) 
+  # - Thresholds should be symmetric for standard analysis
+  # - Values should be in log2 scale
+  # =============================================================================
+  
+  # Check threshold signs
+  if (amp_threshold <= 0) {
+    stop("amp_threshold must be positive (GISTIC2 standard: 0.25)")
+  }
+  
+  if (del_threshold >= 0) {
+    stop("del_threshold must be negative (GISTIC2 standard: -0.25)")
+  }
+  
+  # Warn if thresholds are not symmetric (common GISTIC2 practice)
+  if (abs(amp_threshold + del_threshold) > 0.01) {
+    warning("Asymmetric thresholds detected. GISTIC2 typically uses symmetric thresholds (e.g., ±0.25)")
+  }
+  
+  # Check if values seem reasonable for log2 scale
+  if (abs(amp_threshold) > 2) {
+    warning("amp_threshold seems large for log2 scale. GISTIC2 typically uses values around 0.25")
+  }
+  
+  if (abs(del_threshold) > 2) {
+    warning("del_threshold seems large for log2 scale. GISTIC2 typically uses values around -0.25")
+  }
+  
+  # Validate stringent threshold
+  if (stringent_threshold <= 0 || stringent_threshold > 1) {
+    stop("stringent_threshold must be between 0 and 1")
+  }
+  
+  bagel_log(sprintf("Using GISTIC2-style parameters: amp=%.3f, del=%.3f, stringent=%.3f", 
+                   amp_threshold, del_threshold, stringent_threshold), "INFO")
+  
+  return(list(
+    amp_threshold = amp_threshold,
+    del_threshold = del_threshold, 
+    stringent_threshold = stringent_threshold,
+    is_symmetric = abs(amp_threshold + del_threshold) < 0.01
+  ))
+}
+
 #' Setup BAGEL Environment for Logging
 #' 
 #' @keywords internal

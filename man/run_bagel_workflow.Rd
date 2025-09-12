@@ -8,8 +8,8 @@ run_bagel_workflow(
   cancer_type,
   data_dir,
   output_dir = NULL,
-  amp_threshold = log2(2.5/2),
-  del_threshold = log2(1.5/2),
+  amp_threshold = 0.25,
+  del_threshold = -0.25,
   stringent_threshold = 0.9,
   use_gistic = TRUE,
   save_results = TRUE

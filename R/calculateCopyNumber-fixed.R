@@ -45,10 +45,28 @@
 #' }
 #'
 #' @export
+# =============================================================================
+# GISTIC2-Style Parameter Defaults Fix
+# 
+# ISSUE: Original BAGEL used non-standard thresholds:
+# - amp_threshold = log2(2.5/2) = 0.32
+# - del_threshold = log2(1.5/2) = -0.415
+#
+# FIX: Use GISTIC2 parameter file values:
+# - amp_threshold = 0.25 (from GISTIC2 parameter file)
+# - del_threshold = -0.25 (symmetric, GISTIC2 standard)
+# This matches standard GISTIC2 behavior and published analyses
+# =============================================================================
+
 calculateCopyNumber_fixed <- function(segments,
                                     breakpoints,
-                                    amp_threshold = log2(2.5/2),
-                                    del_threshold = log2(1.5/2), 
+                                    # OLD CODE - COMMENTED OUT:
+                                    # amp_threshold = log2(2.5/2),
+                                    # del_threshold = log2(1.5/2),
+                                    
+                                    # NEW CODE - GISTIC2 Standard:
+                                    amp_threshold = 0.25,    # From GISTIC2 parameter file
+                                    del_threshold = -0.25,   # From GISTIC2 parameter file (symmetric)
                                     stringent_threshold = 0.9,
                                     output_dir = ".",
                                     cancer_type = "Unknown",
@@ -57,6 +75,15 @@ calculateCopyNumber_fixed <- function(segments,
                                     save_results = TRUE) {
   
   bagel_log(sprintf("Starting copy number analysis for cancer type: %s", cancer_type), "INFO")
+  
+  # =============================================================================
+  # GISTIC2 Parameter Validation - NEW
+  # 
+  # PURPOSE: Validate that parameters follow GISTIC2 conventions before analysis
+  # =============================================================================
+  
+  # Validate GISTIC2 parameters
+  validated_params <- validate_gistic2_parameters(amp_threshold, del_threshold, stringent_threshold)
   
   # Input validation
   segments <- validate_segments(segments)

@@ -215,46 +215,171 @@ create_arm_matrix <- function(arm_summaries, output_dir = NULL) {
     
     rownames(arm_matrix) <- arm_names
     
-    # Convert to copy numbers
-    copy_number_matrix <- 2 * (2^arm_matrix)
+    # =============================================================================
+    # GISTIC2-Style Copy Number Calculation Fix
+    # 
+    # ISSUE: Original BAGEL used absolute copy number conversion: 2 * (2^log2ratio)
+    # This produces values centered around 2 (diploid) and always positive, which:
+    # - Does not follow GISTIC2 conventions
+    # - Makes survival analysis difficult (no negative values for deletions)
+    # - Incompatible with standard copy number analysis tools
+    #
+    # FIX: Use GISTIC2-style calculation where:
+    # - Log2 ratios are used directly (centered at 0)
+    # - 0 = diploid (normal)
+    # - Positive values = amplifications  
+    # - Negative values = deletions
+    # - Matches GISTIC2 parameters: amp_threshold=0.25, del_threshold=0.25
+    # =============================================================================
     
-    # Calculate summary statistics
+    # OLD CODE - COMMENTED OUT:
+    # Original BAGEL approach (absolute copy numbers, always positive)
+    # copy_number_matrix <- 2 * (2^arm_matrix)
+    
+    # NEW CODE - GISTIC2-Style:
+    # Use log2 ratios directly (GISTIC2 convention)
+    copy_number_matrix <- arm_matrix  # Keep log2 ratios as-is, centered at 0
+    
+    # =============================================================================
+    # GISTIC2-Style Summary Statistics Fix
+    # 
+    # ISSUE: Original summary used absolute copy number statistics (Mean_CN, etc.)
+    # which don't make sense for log2-centered values
+    #
+    # FIX: Update to GISTIC2-style statistics:
+    # - Use log2 ratio terminology
+    # - Add alteration frequency calculations
+    # - Apply GISTIC2 thresholds from parameter file (amp=0.25, del=0.25)
+    # =============================================================================
+    
+    # OLD CODE - COMMENTED OUT:
+    # Original absolute copy number statistics
+    # arm_stats <- data.frame(
+    #     Arm = rownames(copy_number_matrix),
+    #     Mean_CN = round(rowMeans(copy_number_matrix, na.rm = TRUE), 3),
+    #     Median_CN = round(apply(copy_number_matrix, 1, median, na.rm = TRUE), 3),
+    #     Min_CN = round(apply(copy_number_matrix, 1, min, na.rm = TRUE), 3),
+    #     Max_CN = round(apply(copy_number_matrix, 1, max, na.rm = TRUE), 3),
+    #     SD_CN = round(apply(copy_number_matrix, 1, sd, na.rm = TRUE), 3)
+    # )
+    
+    # NEW CODE - GISTIC2-Style:
+    # GISTIC2 thresholds from parameter file
+    gistic_amp_threshold <- 0.25  # From GISTIC2 parameter file
+    gistic_del_threshold <- -0.25 # From GISTIC2 parameter file (negative for deletions)
+    
+    # Calculate GISTIC2-style summary statistics
     arm_stats <- data.frame(
         Arm = rownames(copy_number_matrix),
-        Mean_CN = round(rowMeans(copy_number_matrix, na.rm = TRUE), 3),
-        Median_CN = round(apply(copy_number_matrix, 1, median, na.rm = TRUE), 3),
-        Min_CN = round(apply(copy_number_matrix, 1, min, na.rm = TRUE), 3),
-        Max_CN = round(apply(copy_number_matrix, 1, max, na.rm = TRUE), 3),
-        SD_CN = round(apply(copy_number_matrix, 1, sd, na.rm = TRUE), 3)
+        Mean_Log2Ratio = round(rowMeans(copy_number_matrix, na.rm = TRUE), 4),
+        Median_Log2Ratio = round(apply(copy_number_matrix, 1, median, na.rm = TRUE), 4),
+        Min_Log2Ratio = round(apply(copy_number_matrix, 1, min, na.rm = TRUE), 4),
+        Max_Log2Ratio = round(apply(copy_number_matrix, 1, max, na.rm = TRUE), 4),
+        SD_Log2Ratio = round(apply(copy_number_matrix, 1, sd, na.rm = TRUE), 4),
+        Pct_Amplified = round(rowSums(copy_number_matrix >= gistic_amp_threshold, na.rm = TRUE) / ncol(copy_number_matrix) * 100, 1),
+        Pct_Deleted = round(rowSums(copy_number_matrix <= gistic_del_threshold, na.rm = TRUE) / ncol(copy_number_matrix) * 100, 1),
+        Pct_Altered = round(rowSums(abs(copy_number_matrix) >= gistic_amp_threshold, na.rm = TRUE) / ncol(copy_number_matrix) * 100, 1)
     )
     
     # Save matrices if output_dir provided
     if (!is.null(output_dir)) {
         dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+        # =============================================================================
+        # GISTIC2-Style Output Files Fix
+        # 
+        # ISSUE: Original file names and content structure don't reflect GISTIC2 convention
+        #
+        # FIX: Update file names and data structure:
+        # - arm_copynumber_matrix.csv now contains log2 ratios (GISTIC2 style)
+        # - Add discrete calls matrix (-1, 0, +1) for compatibility
+        # - Update column names to reflect log2 ratio nature
+        # =============================================================================
+        
+        # Save log2 ratio matrix (this is now the "copy number" matrix in GISTIC2 style)
         write.csv(arm_matrix, file.path(output_dir, "arm_log2ratio_matrix.csv"))
         write.csv(copy_number_matrix, file.path(output_dir, "arm_copynumber_matrix.csv"))
         write.csv(arm_stats, file.path(output_dir, "arm_copynumber_summary.csv"), row.names = FALSE)
         
-        # Long format
+        # NEW: Create discrete calls matrix (-1, 0, +1) following GISTIC2 convention
+        calls_matrix <- matrix(0, nrow = nrow(copy_number_matrix), ncol = ncol(copy_number_matrix))
+        rownames(calls_matrix) <- rownames(copy_number_matrix)
+        colnames(calls_matrix) <- colnames(copy_number_matrix)
+        calls_matrix[copy_number_matrix >= gistic_amp_threshold] <- 1   # Amplification
+        calls_matrix[copy_number_matrix <= gistic_del_threshold] <- -1  # Deletion
+        write.csv(calls_matrix, file.path(output_dir, "arm_calls_matrix_gistic_style.csv"))
+        
+        # Long format - updated to reflect GISTIC2 style
         long_format <- as.data.frame(copy_number_matrix) %>%
             mutate(Arm = rownames(.)) %>%
-            pivot_longer(-Arm, names_to = "Sample", values_to = "Copy_Number") %>%
+            pivot_longer(-Arm, names_to = "Sample", values_to = "Log2Ratio") %>%  # Changed from Copy_Number to Log2Ratio
             arrange(Arm, Sample)
+        
+        # Add discrete calls to long format
+        calls_long <- as.data.frame(calls_matrix) %>%
+            mutate(Arm = rownames(.)) %>%
+            pivot_longer(-Arm, names_to = "Sample", values_to = "Call") %>%
+            arrange(Arm, Sample)
+        
+        # Combine continuous and discrete data
+        long_format <- long_format %>%
+            left_join(calls_long, by = c("Arm", "Sample")) %>%
+            mutate(
+                Call_Label = case_when(
+                    Call == 1 ~ "Amplification",
+                    Call == -1 ~ "Deletion", 
+                    Call == 0 ~ "Normal"
+                )
+            )
         
         write.csv(long_format, file.path(output_dir, "arm_copynumber_long.csv"), row.names = FALSE)
     } else {
-        # Long format for return
+        # Long format for return - GISTIC2 style
+        calls_matrix <- matrix(0, nrow = nrow(copy_number_matrix), ncol = ncol(copy_number_matrix))
+        rownames(calls_matrix) <- rownames(copy_number_matrix)
+        colnames(calls_matrix) <- colnames(copy_number_matrix)
+        calls_matrix[copy_number_matrix >= gistic_amp_threshold] <- 1
+        calls_matrix[copy_number_matrix <= gistic_del_threshold] <- -1
+        
         long_format <- as.data.frame(copy_number_matrix) %>%
             mutate(Arm = rownames(.)) %>%
-            pivot_longer(-Arm, names_to = "Sample", values_to = "Copy_Number") %>%
+            pivot_longer(-Arm, names_to = "Sample", values_to = "Log2Ratio") %>%  # Changed from Copy_Number
             arrange(Arm, Sample)
+        
+        calls_long <- as.data.frame(calls_matrix) %>%
+            mutate(Arm = rownames(.)) %>%
+            pivot_longer(-Arm, names_to = "Sample", values_to = "Call") %>%
+            arrange(Arm, Sample)
+        
+        long_format <- long_format %>%
+            left_join(calls_long, by = c("Arm", "Sample")) %>%
+            mutate(
+                Call_Label = case_when(
+                    Call == 1 ~ "Amplification",
+                    Call == -1 ~ "Deletion",
+                    Call == 0 ~ "Normal"
+                )
+            )
     }
     
+    # =============================================================================
+    # GISTIC2-Style Return Object Fix
+    # 
+    # FIX: Update return object to include GISTIC2-style components:
+    # - cn_matrix now contains log2 ratios (GISTIC2 style) instead of absolute copy numbers
+    # - Add calls_matrix for discrete classifications
+    # - Add GISTIC2 thresholds for reference
+    # =============================================================================
+    
     return(list(
-        log2_matrix = arm_matrix,
-        cn_matrix = copy_number_matrix,
-        summary_stats = arm_stats,
-        long_format = long_format
+        log2_matrix = arm_matrix,                    # Raw log2 ratios
+        cn_matrix = copy_number_matrix,             # GISTIC2-style copy numbers (same as log2_matrix)
+        calls_matrix = calls_matrix,                # NEW: Discrete calls (-1, 0, +1)
+        summary_stats = arm_stats,                  # Updated GISTIC2-style statistics
+        long_format = long_format,                  # Updated long format with calls
+        gistic_thresholds = list(                   # NEW: GISTIC2 parameters used
+            amp_threshold = gistic_amp_threshold,
+            del_threshold = gistic_del_threshold
+        )
     ))
 }
 
@@ -304,22 +429,14 @@ generate_analysis_report <- function(cancer_type, results, output_dir) {
     
     # Add alteration frequencies
     if (!is.null(results$matrices)) {
-        alteration_summary <- results$matrices$long_format %>%
-            mutate(
-                Alteration_Type = case_when(
-                    Copy_Number >= 2.5 ~ "Amplification",
-                    Copy_Number <= 1.5 ~ "Deletion",
-                    TRUE ~ "Normal"
-                )
-            ) %>%
-            count(Arm, Alteration_Type) %>%
-            pivot_wider(names_from = Alteration_Type, values_from = n, values_fill = 0) %>%
-            mutate(
-                Total_Samples = Normal + Amplification + Deletion,
-                Amp_Freq = round(Amplification / Total_Samples * 100, 1),
-                Del_Freq = round(Deletion / Total_Samples * 100, 1)
-            ) %>%
-            arrange(desc(Amp_Freq + Del_Freq))
+      alteration_summary <- matrices$long_format %>%
+        count(Arm, Call_Label) %>% 
+        pivot_wider(names_from = Call_Label, values_from = n, values_fill = 0) %>% 
+        dplyr::mutate(Total_Samples = Normal + Amplification + Deletion,
+                      Amp_Freq = round(Amplification / Total_Samples * 100, 1),
+                      Del_Freq = round(Deletion / Total_Samples * 100, 1),
+                      Alt_Freq = Amp_Freq + Del_Freq) %>%
+        arrange(desc(Alt_Freq))
         
         report_content <- c(
             report_content,
@@ -380,11 +497,24 @@ generate_analysis_report <- function(cancer_type, results, output_dir) {
 #' @param save_results Logical, whether to save results (default TRUE)
 #' @return List with analysis results or TRUE/FALSE if used as workflow
 #' @export
+# =============================================================================
+# GISTIC2-Style Workflow Parameters Fix
+# 
+# ISSUE: Workflow function used inconsistent thresholds with main function
+#
+# FIX: Update to use same GISTIC2 parameters as calculateCopyNumber_fixed
+# =============================================================================
+
 run_bagel_workflow <- function(cancer_type, 
                                data_dir,
                                output_dir = NULL,
-                               amp_threshold = log2(2.5/2),
-                               del_threshold = log2(1.5/2), 
+                               # OLD CODE - COMMENTED OUT:
+                               # amp_threshold = log2(2.5/2),
+                               # del_threshold = log2(1.5/2),
+                               
+                               # NEW CODE - GISTIC2 Standard:
+                               amp_threshold = 0.25,     # From GISTIC2 parameter file
+                               del_threshold = -0.25,    # From GISTIC2 parameter file
                                stringent_threshold = 0.9,
                                use_gistic = TRUE,
                                save_results = TRUE) {
