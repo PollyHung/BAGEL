@@ -63,7 +63,7 @@ tryCatch({
       arm_definitions <- get_arm_definitions(tcga_cancer_type, breakpoint_data)
     })
   } ## IF file does not exist, fall back to TCGA breakpoints 
-
+  
   
   cat("=== Step 2: Run main BAGEL function ===\n") # ===========================
   bagel_results <- calculateCopyNumber_fixed(
@@ -140,10 +140,10 @@ tryCatch({
     cat("❌ Error generating ideograms:", e$message, "\n")
   })
   
- 
+  
   cat("=== Step 5: Verify All File Exists ===\n") # ============================
   summarize_bagel_outputs(output_dir = output_dir)
- 
+  
 }, error = function(e) {
   cat("❌ ERROR during BAGEL\n")
   cat("Error message:", e$message, "\n")
@@ -154,9 +154,16 @@ tryCatch({
 # ==============================================================================
 # Chapter 2 - Cross Validation Against TCGA 
 # ==============================================================================
+query_path <- "~/Desktop/BAGEL/validation/ovarian_serous_cystadenocarcinoma/bagel_v2_analysis/BAGEL_results_ovarian_serous_cystadenocarcinoma/arm_definitions.txt"
+ref_cancer <- ""
+results <- analyze_breakpoint_similarity(query_path = query_path,
+                                         reference = ref_cancer,
+                                         output_dir = file.path(data_dir, cancer_type, "similarity_with_"))
 
 
-
+# ==============================================================================
+# Chapter 3 - Clustering 
+# ==============================================================================
 
 
 
