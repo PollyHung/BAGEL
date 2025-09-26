@@ -1,6 +1,28 @@
-# BAGEL v2.0 Demonstration Script
-# Example analysis using ovarian_serous_cystadenocarcinoma
-# This script demonstrates the complete BAGEL v2.0 workflow in single cancer 
+## ---------------------------
+##
+## Script name: runMe.R
+##
+## Purpose of script: Complete BAGEL v2.5 analysis pipeline for all available
+## cancer types using GISTIC2-style parameters. Performs breakpoint-based 
+## arm-level copy number analysis with statistical significance testing.
+##
+## Author: Polly Hung
+##
+## Date Created: 2025-09-12
+## Date Updated: 2025-09-12
+##
+## Copyright (c) Polly Hung, 2025
+## Email: u3012149@connect.hku.hk
+##
+## ---------------------------
+##
+## Notes:
+## - Uses updated GISTIC2 parameters (amp_threshold=0.25, del_threshold=-0.25)
+## - Processes all cancer types with BISCUT breakpoints and BAGEL analysis
+## - Skips Prologue section (BISCUT already run)
+## - Generates comprehensive reports and visualizations for each cancer type
+##
+## ---------------------------
 
 
 # Load Libraries 
@@ -12,143 +34,64 @@ library(tidyr)
 library(stringr)
 library(patchwork)
 
+
+# Some Preparations ============================================================
 # Set Global Control 
 data_dir <- "/Users/polly_hung/Desktop/BAGEL/data/biscut+bagel"
+
+# Discover all available cancer types (excluding .zip files)
+all_cancer_dirs <- list.dirs(data_dir, recursive = FALSE)
+all_cancer_types <- basename(all_cancer_dirs)
+valid_cancer_types <- all_cancer_types[!grepl("\\.zip$", all_cancer_types)]
+
+# Take Ovarian Cancer as an Example 
 cancer_type <- "tcga_ovarian_serous_cystadenocarcinoma"
-output_dir <- file.path(data_dir, cancer_type, "bagel_v3_analysis")
+
+# Define Pathways 
+output_dir <- file.path(data_dir, cancer_type, "bagel_v4_analysis")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-# Set Logging Information 
-setup_bagel_logging(log_level = "INFO", log_file = file.path(output_dir, "analysis.log"))
+# Setting up Logging 
+log_bagel(log_level = "INFO", log_file = file.path(output_dir, "analysis.log"))
 
 
-# ==============================================================================
-# Prologue - Creation of Breakpoints
-# ==============================================================================
-# Run BISCUT 
-tryCatch({
-  run_biscut_pipeline(cancer_folder = cancer_type, 
-                      results_dir = data_dir, 
-                      cores = 4)
-}, error = function(e) {
-  cat("❌ ERROR during BISCUT\n")
-  cat("Error message:", e$message, "\n")
-  stop(e)
-})
+# Creation of Breakpoints ======================================================
+# Run BISCUT
+run_biscut_pipeline(cancer_folder = cancer_type,
+                    results_dir = data_dir,
+                    cores = 4)
 
 
-# ==============================================================================
-# Chapter 1 - Functionally Defined Aneuploidy 
-# ==============================================================================
-# Run BAGEL 
-tryCatch({
-  cat("=== Step 1: Load Data ===\n") # =========================================
-  
-  # Load Segmentation File 
-  seg_file <- file.path(data_dir, cancer_type, "segmentation.seg")
-  segments <- load_segmentation_data(cancer_type, data_dir)
-  
-  # Load Breakpoint Information 
-  custom_biscut_file <- list.files(path = file.path(data_dir, cancer_type), 
-                                   pattern = "all_BISCUT_results.txt", 
-                                   recursive = TRUE, 
-                                   full.names = TRUE)
-  if (file.exists(custom_biscut_file)) {
-    tryCatch({
-      arm_definitions <- create_custom_arm_definitions(custom_biscut_file)
-    }, error = function(e) {
-      cat("⚠️ Error processing TCGA BISCUT results:", e$message, "\n")
-      cat("Falling back to pre-defined TCGA consensus breakpoints\n")
-      breakpoint_data <- load_breakpoint_data()
-      arm_definitions <- get_arm_definitions(tcga_cancer_type, breakpoint_data)
-    })
-  } ## IF file does not exist, fall back to TCGA breakpoints 
-  
-  
-  cat("=== Step 2: Run main BAGEL function ===\n") # ===========================
-  bagel_results <- calculateCopyNumber_fixed(
-    segments = segments,
-    breakpoints = arm_definitions,
-    amp_threshold = log2(2.5/2),       # Amplification threshold
-    del_threshold = log2(1.5/2),       # Deletion threshold
-    stringent_threshold = 0.9,         # Stringent threshold
-    output_dir = output_dir,
-    cancer_type = cancer_type,
-    use_gistic = TRUE,                 # Enable GISTIC analysis
-    save_results = TRUE                # Save intermediate results
-  )
-  
-  
-  cat("=== Step 3: Organise and Retrieve Results ===\n") # =====================
-  
-  # Create chromosome arm copy number matrices
-  matrices <- create_arm_matrix(bagel_results$arm_summaries, output_dir)
-  bagel_results$matrices <- matrices
-  
-  # Show significant arms if any
-  if (!is.null(bagel_results$significant_arms) && nrow(bagel_results$significant_arms) > 0) {
-    n = min(c(10, nrow(bagel_results$significant_arms)))
-    cat("Significant arms (q < 0.25):", nrow(bagel_results$significant_arms), "\n")
-    cat("Top", n, "significant arms:\n")
-    top_arms <- head(bagel_results$significant_arms[order(bagel_results$significant_arms$mean_z_score, decreasing = TRUE), ], n)
-  } else {
-    cat("No significant arms found (q < 0.25)\n")
-  }
-  
-  # Analyze alteration frequencies
-  alteration_summary <- matrices$long_format %>%
-    count(Arm, Call_Label) %>% 
-    pivot_wider(names_from = Call_Label, values_from = n, values_fill = 0) %>% 
-    dplyr::mutate(Total_Samples = Normal + Amplification + Deletion,
-                  Amp_Freq = round(Amplification / Total_Samples * 100, 1),
-                  Del_Freq = round(Deletion / Total_Samples * 100, 1),
-                  Alt_Freq = Amp_Freq + Del_Freq) %>%
-    arrange(desc(Alt_Freq))
-  
-  # Generate comprehensive analysis report
-  generate_analysis_report(cancer_type, bagel_results, output_dir)
-  
-  # Save complete results
-  save(bagel_results, file = file.path(output_dir, "bagel_v2_complete_results.RData"))
-  
-  
-  cat("=== Step 4: Generate Chromosome Ideograms ===\n") # =====================
-  tryCatch({
-    ideogram_results <- plot_chromosome_ideograms(
-      bagel_results = bagel_results,
-      output_dir = output_dir,
-      save_plots = TRUE
-    )
-    if (!is.null(ideogram_results)) {
-      n_chromosomes <- length(ideogram_results$individual_plots)
-      cat("✅ Generated ideograms for", n_chromosomes, "chromosomes\n")
-    } else {
-      cat("⚠️ No ideograms generated (no valid chromosome data)\n")
-    }
-    
-  }, error = function(e) {
-    cat("❌ Error generating ideograms:", e$message, "\n")
-  })
-  
-  
-  cat("=== Step 5: Verify All File Exists ===\n") # ============================
-  summarize_bagel_outputs(output_dir = output_dir)
-  
-}, error = function(e) {
-  cat("❌ ERROR during BAGEL\n")
-  cat("Error message:", e$message, "\n")
-  stop(e)
-})
+# Clean up the Breakpoints =====================================================
+# Load Breakpoint Information using unified function
+custom_biscut_file <- list.files(path = file.path(data_dir, cancer_type),
+                                 pattern = "all_BISCUT_results.txt",
+                                 recursive = TRUE,
+                                 full.names = TRUE)
+if (length(custom_biscut_file) == 0) { custom_biscut_file <- NULL } 
+arm_definitions <- define_arm(custom_biscut_file = custom_biscut_file,
+                              cancer_type = cancer_type,
+                              min_statistical_support = 10,
+                              min_combined_sig = 1.0) 
 
 
+# Run Main BAGEL Function ======================================================
+# Load Segmentation File 
+seg_file <- file.path(data_dir, cancer_type, "segmentation.seg")
+segments <- load_segmentation(cancer_type, data_dir)
+bagel_results <- calculate_copynumber(segments = segments, 
+                                      breakpoints = arm_definitions,
+                                      amp_threshold = 0.25, 
+                                      del_threshold = -0.25,
+                                      stringent_threshold = 0.95)
+create_matrix(bagel_results$arm_summaries, output_dir)
 
 
-
-
-
-
-
-
+# Inspect and Plot the Result ==================================================
+# Generate Chromosome Ideograms
+ideogram_results <- plot_ideograms(bagel_results = bagel_results,
+                                   output_dir = output_dir,
+                                   save_plots = TRUE)
 
 
 
