@@ -44,7 +44,10 @@ all_cancer_dirs <- list.dirs(data_dir, recursive = FALSE)
 all_cancer_types <- basename(all_cancer_dirs)
 valid_cancer_types <- all_cancer_types[!grepl("\\.zip$", all_cancer_types)]
 
-# Take Ovarian Cancer as an Example 
+
+# for(cancer_type in valid_cancer_types){
+
+# Take Ovarian Cancer as an Example
 cancer_type <- "tcga_ovarian_serous_cystadenocarcinoma"
 
 # Define Pathways 
@@ -56,42 +59,53 @@ log_bagel(log_level = "INFO", log_file = file.path(output_dir, "analysis.log"))
 
 
 # Creation of Breakpoints ======================================================
+# Load Segmentation File
+seg_file <- file.path(data_dir, cancer_type, "segmentation.seg")
+segments <- load_segments(cancer_type, data_dir)
 # Run BISCUT
-run_biscut_pipeline(cancer_folder = cancer_type,
-                    results_dir = data_dir,
-                    cores = 4)
-
+run_biscut(cancer_folder = cancer_type,
+           results_dir = data_dir,
+           skip = TRUE,
+           cores = 4)
 
 # Clean up the Breakpoints =====================================================
-# Load Breakpoint Information using unified function
+# Load Breakpoint Raw File
 custom_biscut_file <- list.files(path = file.path(data_dir, cancer_type),
                                  pattern = "all_BISCUT_results.txt",
                                  recursive = TRUE,
                                  full.names = TRUE)
 if (length(custom_biscut_file) == 0) { custom_biscut_file <- NULL } 
+# Process Breakpoints to real breakpoints
 arm_definitions <- define_arm(custom_biscut_file = custom_biscut_file,
-                              cancer_type = cancer_type,
-                              min_statistical_support = 10,
-                              min_combined_sig = 1.0) 
-
+                              cancer_type = cancer_type, 
+                              percentage_length = 0, 
+                              output_dir = output_dir) 
+# Generate Summary Plots 
+arm_definitions_plot <- summarise_arm(arm_definitions = arm_definitions, 
+                                      output_dir = output_dir,
+                                      dir_name = "arms_ideogram", 
+                                      save_plots = TRUE)
+# Generate Chromosome Ideograms
+ideogram_results <- plot_ideograms(arm_definitions = arm_definitions,
+                                   output_dir = output_dir,
+                                   dir_name = "arms_ideogram", 
+                                   save_plots = TRUE)
 
 # Run Main BAGEL Function ======================================================
-# Load Segmentation File 
-seg_file <- file.path(data_dir, cancer_type, "segmentation.seg")
-segments <- load_segmentation(cancer_type, data_dir)
-bagel_results <- calculate_copynumber(segments = segments, 
-                                      breakpoints = arm_definitions,
-                                      amp_threshold = 0.25, 
-                                      del_threshold = -0.25,
-                                      stringent_threshold = 0.95)
-create_matrix(bagel_results$arm_summaries, output_dir)
+results <- calculate_copynumber(segments = segments,
+                                breakpoints = arm_definitions,
+                                amp_threshold = 0.25,
+                                del_threshold = -0.25,
+                                stringent_threshold = 0.95,
+                                output_dir = output_dir,
+                                cancer_type = cancer_type,
+                                create_matrices = TRUE)
+
+# Run Accessory Analysis =======================================================
+
+# }
 
 
-# Inspect and Plot the Result ==================================================
-# Generate Chromosome Ideograms
-ideogram_results <- plot_ideograms(bagel_results = bagel_results,
-                                   output_dir = output_dir,
-                                   save_plots = TRUE)
 
 
 

@@ -13,6 +13,7 @@ Currently supported:
 \item "BISCUT": BISCUT peak identification and BAGEL analysis results (default)
 \item "ARM": Arm-level copy number analysis results
 \item "GISTIC": GISTIC-style statistical analysis results
+\item "BISCUT-combinations": Different Arm Type Combination possible
 }}
 }
 \value{

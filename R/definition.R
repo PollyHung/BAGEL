@@ -9,6 +9,7 @@
 #'   - "BISCUT": BISCUT peak identification and BAGEL analysis results (default)
 #'   - "ARM": Arm-level copy number analysis results
 #'   - "GISTIC": GISTIC-style statistical analysis results
+#'   - "BISCUT-combinations": Different Arm Type Combination possible 
 #'
 #' @details
 #' The BISCUT dictionary covers six main groups of variables:
@@ -44,7 +45,7 @@ definition <- function(define = "BISCUT"){
     stop("Parameter 'define' must be a single character string")
   }
 
-  define <- toupper(trimws(define))
+  # define <- toupper(trimws(define))
 
   if (define == "BISCUT") {
     # Pre-build dictionary content for better performance
@@ -169,8 +170,86 @@ definition <- function(define = "BISCUT"){
 
     cat(gistic_content)
 
+  } else if (define == "BISCUT-combinations") {
+
+    biscut_combinations_content <- paste(
+      "",
+      "----- BISCUT COMBINATIONS BIOLOGICAL DICTIONARY -----",
+      "",
+      "Three key attributes define each breakpoint peak:",
+      "",
+      "direction            # amp (amplification) or del (deletion)",
+      "telcent              # tel (telomere-bounded) or cent (centromere-bounded)",
+      "negpos               # neg (negative selection) or pos (positive selection)",
+      "",
+      "This gives 8 possible combinations (2 × 2 × 2):",
+      "",
+      "amp:tel:pos          # Classic oncogene amplification",
+      "                     # Tumors amplify from telomere TO this breakpoint",
+      "                     # Driver oncogene near breakpoint",
+      "",
+      "amp:tel:neg          # Toxic gene avoidance",
+      "                     # Tumors amplify from telomere but STOP at breakpoint",
+      "                     # Toxic gene just past breakpoint",
+      "",
+      "amp:cent:pos         # Centromere oncogene amplification",
+      "                     # Tumors amplify from breakpoint TO centromere",
+      "                     # Driver oncogene near centromere",
+      "",
+      "amp:cent:neg         # Centromere toxic barrier",
+      "                     # Tumors amplify toward centromere but STOP at breakpoint",
+      "                     # Toxic gene between breakpoint and centromere",
+      "",
+      "del:tel:pos          # Classic tumor suppressor deletion",
+      "                     # Tumors delete from telomere TO this breakpoint",
+      "                     # Tumor suppressor near breakpoint",
+      "",
+      "del:tel:neg          # Essential gene protection",
+      "                     # Tumors delete from telomere but STOP at breakpoint",
+      "                     # Essential gene just past breakpoint",
+      "",
+      "del:cent:pos         # Centromere tumor suppressor deletion",
+      "                     # Tumors delete from breakpoint TO centromere",
+      "                     # Tumor suppressor near centromere",
+      "",
+      "del:cent:neg         # Centromere essential barrier",
+      "                     # Tumors delete toward centromere but STOP at breakpoint",
+      "                     # Essential gene between breakpoint and centromere",
+      "",
+      "Selection types:",
+      "",
+      "Positive (pos)       # Selection FOR this alteration",
+      "                     # Driver genes (oncogenes/TSGs)",
+      "                     # Higher frequency than expected",
+      "                     # Direct benefit to tumor",
+      "",
+      "Negative (neg)       # Selection AGAINST going further",
+      "                     # Barrier genes (toxic/essential)",
+      "                     # Alterations stop at boundary",
+      "                     # Going further reduces fitness",
+      "",
+      "Boundary types:",
+      "",
+      "Telomere (tel)       # Event starts from chromosome end",
+      "                     # More common mechanistically",
+      "                     # Most oncogenes/TSGs distributed across arms",
+      "",
+      "Centromere (cent)    # Event starts from chromosome center",
+      "                     # Less common (unstable sequences)",
+      "                     # Targeted regional alterations",
+      "",
+      "BAGEL arm definitions use breakpoint positions to define",
+      "direction-specific functional boundaries that capture",
+      "both driver selection and barrier constraints.",
+      "",
+      sep = "\n"
+    )
+
+    cat(biscut_combinations_content)
+
+
   } else {
-    available_types <- c("BISCUT", "ARM", "GISTIC")
+    available_types <- c("BISCUT", "ARM", "GISTIC", "BISCUT-combinations")
     stop(sprintf("Dictionary type '%s' not recognized. Available types: %s",
                  define, paste(available_types, collapse = ", ")))
   }

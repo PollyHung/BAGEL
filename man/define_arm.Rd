@@ -7,8 +7,8 @@
 define_arm(
   custom_biscut_file = NULL,
   cancer_type = NULL,
-  min_statistical_support = 10,
-  min_combined_sig = 1
+  percentage_length = 0.1,
+  output_dir = output_dir
 )
 }
 \arguments{
@@ -24,36 +24,35 @@ selection and as fallback when custom BISCUT processing fails. Should match
 identifiers in the BAGEL breakpoint database. If NULL and custom_biscut_file
 processing fails, an error will be thrown.}
 
-\item{min_statistical_support}{Numeric. Minimum combined statistical support
-threshold for BISCUT peak inclusion, calculated as (n_right + n_left). Peaks
-with support below this threshold are filtered out during custom processing.
-Default value of 10 provides good balance between sensitivity and specificity
-based on BISCUT validation studies. Range: \link{1, Inf}.}
-
-\item{min_combined_sig}{Numeric. Minimum combined significance score threshold
-for BISCUT peak inclusion. This represents the statistical significance of
-breakpoint detection. Default value of 1.0 corresponds to moderately significant
-breakpoints. Higher values increase stringency. Range: \link{0, Inf}.}
+\item{percentage_length}{Numeric. Minimum percentage of arm length that
+functional regions must span to be included in the analysis. Regions shorter
+than this threshold are filtered out during processing. Default value of 0.1
+(10\%) provides good balance between sensitivity and inclusion of meaningful
+functional regions. Range: \link{0, 1}.}
 }
 \value{
 A data.frame with standardized arm definition columns:
 \describe{
-\item{arm}{Character. Chromosome arm identifier (e.g., "1p", "1q", "2p")}
-\item{chr}{Numeric. Chromosome number (1-22)}
-\item{arm_type}{Character. Arm type indicator ("p" or "q")}
-\item{arm_start}{Numeric. Arm start coordinate in base pairs (1-based)}
-\item{arm_end}{Numeric. Arm end coordinate in base pairs (1-based)}
+\item{chr_arm}{Character. Chromosome arm identifier (e.g., "1p", "1q", "2p")}
+\item{chr}{Character. Chromosome identifier (BISCUT: "chr1"; TCGA: numeric)}
+\item{arm_type/arm}{Character. Arm type indicator ("p" or "q")}
+\item{functional_start}{Numeric. Functional region start coordinate in base pairs}
+\item{functional_end}{Numeric. Functional region end coordinate in base pairs}
 \item{direction}{Character. Expected alteration direction ("amp" or "del")}
 }
 
-When custom BISCUT data is used, additional columns may include:
+When custom BISCUT data is used, additional columns include:
 \describe{
 \item{telcent}{Character. Boundary type ("tel" or "cent")}
 \item{type_of_selection}{Character. Selection classification ("TS-like", "onco-like", etc.)}
-\item{functional_length_mb}{Numeric. Functional region length in megabases}
+\item{functional_length}{Numeric. Functional region length in base pairs}
+\item{percentage_length}{Numeric. Functional region as percentage of arm length}
 \item{combined_sig}{Numeric. Statistical significance score}
 \item{n_events}{Numeric. Number of events supporting the breakpoint}
+\item{total_sample_size}{Numeric. Total number of samples in the dataset}
+\item{percent_sample_support}{Numeric. Percentage of samples supporting the event (n_events / total_sample_size)}
 \item{n_right, n_left}{Numeric. Directional statistical support}
+\item{ks_p}{Numeric. Kolmogorov-Smirnov test p-value}
 }
 }
 \description{
@@ -80,10 +79,10 @@ When processing custom BISCUT files, the function:
 \itemize{
 \item Validates required columns: peak_id, Chr, arm, direction, telcent, negpos,
 type_of_selection, Peak.Start, Peak.End, combined_sig, n_right, n_left
-\item Applies statistical filters based on \code{min_statistical_support} and
-\code{min_combined_sig}
+\item Applies statistical filters based on \code{ks_p < 0.05} significance threshold
+\item Filters functional regions by \code{percentage_length} of arm coverage
+\item Uses genomic coordinates (q_start/q_end) for precise boundary definition
 \item Implements telomere/centromere boundary logic for functional region definition
-\item Integrates BISCUT chromosome coordinates for precise arm boundaries
 \item Returns enhanced arm definitions with selection type annotations
 }
 }
@@ -127,8 +126,7 @@ The function implements comprehensive error handling:
 arm_defs <- define_arm(
   custom_biscut_file = "/path/to/all_BISCUT_results.txt",
   cancer_type = "BRCA",
-  min_statistical_support = 15,
-  min_combined_sig = 1.5
+  percentage_length = 0.15
 )
 
 # Example 2: TCGA consensus only
@@ -147,8 +145,7 @@ arm_defs <- define_arm(
 arm_defs <- define_arm(
   custom_biscut_file = "/path/to/results.txt",
   cancer_type = "PRAD",
-  min_statistical_support = 25,
-  min_combined_sig = 2.0
+  percentage_length = 0.2
 )
 }
 

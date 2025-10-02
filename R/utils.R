@@ -4,7 +4,7 @@
 #' @param data_dir Character, path to data directory
 #' @return Cleaned segmentation data frame
 #' @export
-load_segmentation <- function(cancer_type, data_dir) {
+load_segments <- function(cancer_type, data_dir) {
     seg_file <- file.path(data_dir, cancer_type, "segmentation.seg")
     
     if (!file.exists(seg_file)) {
@@ -38,3 +38,17 @@ load_segmentation <- function(cancer_type, data_dir) {
     
     return(segments_clean)
 }
+
+
+#' Setup Logging System
+#'
+#' @param log_level Character, logging level ("DEBUG", "INFO", "WARN", "ERROR")
+#' @param log_file Character, optional file path for logging
+#' @export
+log_bagel <- function(log_level = "INFO", log_file = NULL) {
+  .bagel_env <- new.env(parent = emptyenv())
+  .bagel_env$log_level <- log_level
+  .bagel_env$log_file <- log_file
+}
+
+

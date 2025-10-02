@@ -20,7 +20,7 @@ The package follows a three-tier analysis architecture:
 - **`calculateCopyNumber-fixed.R`**: Enhanced copy number analysis with proper GISTIC2 implementation
 - **`bagel-workflow.R`**: Complete workflow functions for data loading and matrix creation
 - **`process_biscut_results.R`**: BISCUT integration for custom breakpoint definitions
-- **`plot-ideograms.R`**: Chromosome visualization with arm-level alterations
+- **`plot_ideograms.R`**: **UPDATED** - Chromosome ideogram visualization with direct coordinate mapping and nested output structure
 - **`utils.R`**: Logging, validation, and utility functions
 
 ## Development Commands
@@ -113,7 +113,55 @@ output_dir/
 ├── arm_copynumber_summary.csv         # Statistical summaries
 ├── arm_copynumber_long.csv           # Long format with calls
 ├── BAGEL_V2_ANALYSIS_REPORT.md       # Comprehensive report
-└── newly_defined_arms_ideogram/       # Chromosome visualizations
+└── arms_ideogram/                     # Chromosome visualizations
+    ├── chr1_all_events_grid.png       # Per-chromosome grid (n rows × 4 cols)
+    ├── chr2_all_events_grid.png
+    └── ...
+```
+
+### Ideogram Visualization Output
+
+**Plot Structure** (`plot_ideograms()` function):
+```r
+result <- list(
+  # Level 1: Chromosome → Level 2: Individual event plots
+  plots_by_chromosome = list(
+    chr1 = list("1p_amp_cent_pos" = <ggplot>, "1q_del_tel_pos" = <ggplot>, ...),
+    chr2 = list(...),
+    ...
+  ),
+
+  # Combined grids: one per chromosome (n rows × 4 cols)
+  combined_by_chromosome = list(
+    chr1 = <patchwork grid>,
+    chr2 = <patchwork grid>,
+    ...
+  ),
+
+  # Optional: mega-grid of all chromosomes
+  all_chromosomes_combined = <patchwork grid>,
+
+  # Metadata
+  chromosome_colors = c(chr1 = "#color1", ...),
+  output_directory = "/path/to/arms_ideogram/",
+  plot_metadata = list(
+    chromosomes_plotted = c("chr1", "chr2", ...),
+    events_per_chromosome = c(chr1 = 3, chr2 = 5, ...),
+    total_events = 150
+  )
+)
+```
+
+**Access Examples**:
+```r
+# Get specific event plot
+result$plots_by_chromosome$chr19$`19p_amp_cent_pos`
+
+# Get chromosome grid
+result$combined_by_chromosome$chr19
+
+# Get all events for a chromosome
+names(result$plots_by_chromosome$chr19)
 ```
 
 ## Key Design Patterns
@@ -139,6 +187,43 @@ arm_definitions <- get_unified_arm_definitions(custom_biscut_file, cancer_type)
 - Uses log2 ratios directly (centered at 0)
 - Standard thresholds: amp_threshold=0.25, del_threshold=-0.25
 - Generates both continuous values and discrete calls (-1, 0, +1)
+
+### Direct Coordinate Mapping for Ideograms
+
+**Implementation** (`plot_ideograms.R`):
+
+**Visual Layout**:
+- **P arm**: `y = centromere_length` to `y = centromere_length + p_length` (ABOVE)
+- **Centromere**: `y = 0` to `y = centromere_length` (MIDDLE, white color)
+- **Q arm**: `y = -q_length` to `y = 0` (BELOW)
+
+**Key Features**:
+1. **Direct genomic coordinates** - No ratio/proportional calculations
+2. **Centromere visualization** - Explicit white region between p and q arms
+3. **Nested loop structure**:
+   - Outer loop: chromosomes
+   - Inner loop: events within each chromosome
+4. **Event-specific data frames** - Each event captures its own coordinates, labels, and colors
+5. **Top-layer arm labels** - "p", "cen", "q" rendered last to prevent coverage
+6. **Nested output structure** - Two-level list (chromosome → events)
+7. **Grid layouts** - Per-chromosome grids with n rows × 4 columns
+
+**Coordinate Conversion**:
+```r
+# P arm events
+func_y_start <- centromere_length + (p_end - func_start)
+func_y_end <- centromere_length + (p_end - func_end)
+
+# Q arm events
+func_y_start <- -(func_start - q_start)
+func_y_end <- -(func_end - q_start)
+```
+
+**Critical Implementation Details**:
+- Uses `functional_start` and `functional_end` columns from arm_definitions
+- Each event creates its own `event_data` data frame to avoid variable capture issues
+- Arm labels added as final layer using `arm_labels_data` data frame
+- Grid layout uses `patchwork::wrap_plots(ncol = 4)` for automatic organization
 
 ### Error Handling Pattern
 
@@ -237,6 +322,17 @@ cat("✅ Data loaded successfully\n")
 - **Main pipeline**: `runMe.R`
 - **Workflow functions**: `R/bagel-workflow.R`
 - **Core analysis**: `R/calculateCopyNumber-fixed.R`
+
+### Modifying Ideogram Visualization
+- **Primary location**: `R/plot_ideograms.R`
+- **Key aspects**:
+  - Direct coordinate mapping (no ratios)
+  - Event-specific data frames to avoid variable capture
+  - Nested output structure (chromosome → events)
+  - Centromere explicitly shown as white region
+  - Arm labels ("p", "cen", "q") added as top layer
+  - Uses `functional_start` and `functional_end` from arm_definitions
+  - Grid layout: n rows × 4 columns per chromosome
 
 ### Troubleshooting
 - **R issues**: Check package installation and library paths

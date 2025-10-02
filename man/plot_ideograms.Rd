@@ -5,27 +5,26 @@
 \title{Plot Chromosome Ideograms with Enhanced Functional Arm Support}
 \usage{
 plot_ideograms(
-  bagel_results,
+  arm_definitions,
   output_dir = ".",
-  cytoband_data = NULL,
+  dir_name = "arms_ideogram",
   plot_width = 3,
   plot_height = 3,
   save_plots = TRUE
 )
 }
 \arguments{
-\item{bagel_results}{List, results from calculate_copynumber function containing
-arm_definitions with telcent column ("telomere" or "centromere")}
+\item{arm_definitions}{arm_definitions with telcent column ("telomere" or "centromere")}
 
 \item{output_dir}{Character, directory to save plots (default: current directory)}
-
-\item{cytoband_data}{Data frame, cytoband data for chromosome boundaries (default: BISCUT coordinates)}
 
 \item{plot_width}{Numeric, width of individual plots in inches (default: 3)}
 
 \item{plot_height}{Numeric, height of individual plots in inches (default: 3)}
 
 \item{save_plots}{Logical, whether to save plots to files (default: TRUE)}
+
+\item{cytoband_data}{Data frame, cytoband data for chromosome boundaries (default: BISCUT coordinates)}
 }
 \value{
 List containing individual plots, combined plot, colors, and output directory
