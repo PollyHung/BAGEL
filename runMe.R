@@ -100,6 +100,14 @@ results <- calculate_copynumber(segments = segments,
                                 output_dir = output_dir,
                                 cancer_type = cancer_type,
                                 create_matrices = TRUE)
+results2 <- calculate_copynumber2(segments = segments,
+                                  breakpoints = arm_definitions,
+                                  amp_threshold = 0.25,
+                                  del_threshold = -0.25,
+                                  stringent_threshold = 0.95,
+                                  output_dir = output_dir,
+                                  cancer_type = cancer_type,
+                                  create_matrices = TRUE)
 
 # Run Accessory Analysis =======================================================
 

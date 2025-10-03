@@ -110,23 +110,6 @@ functional event each segment belongs to}
 }}
 \item{significant_arms}{Data frame. Subset of gistic_results with p<0.05 or q<0.25,
 includes significance_level and effect_size classifications}
-\item{event_validation}{Data frame. Validation metrics comparing expected (n_events
-from BISCUT) vs observed event counts:
-\itemize{
-\item Peak_ID: Functional event identifier
-\item direction: Expected direction (amp/del)
-\item n_events: Expected count from BISCUT
-\item n_observed_matching: Observed count matching expected direction
-\item n_observed_amp: Total samples with amplification
-\item n_observed_del: Total samples with deletion
-\item total_samples: Total samples analyzed
-\item difference: n_observed - n_expected
-\item percent_difference: Percentage difference
-\item match_quality: Classification (Excellent/Good/Acceptable/Large discrepancy)
-\item recovery_rate: Percentage of expected events recovered
-\item over_recovery: Logical, more observed than expected
-\item under_recovery: Logical, fewer than 80\% recovery
-}}
 \item{matrices}{List (when create_matrices=TRUE):
 \itemize{
 \item log2_matrix: Matrix (Peak_ID × Sample) with log2 ratios
@@ -443,7 +426,6 @@ classifications from BISCUT analysis
 When save_results=TRUE, the following files are created in output_dir:
 \itemize{
 \item \strong{enhanced_arm_summaries.tsv}: Complete event-level summaries
-\item \strong{event_validation_metrics.tsv}: Expected vs observed event counts
 \item \strong{gistic_statistics.tsv}: GISTIC2 statistical results
 \item \strong{significant_arms.tsv}: Significantly altered events only
 \item \strong{analysis_parameters.tsv}: Parameters used
@@ -487,17 +469,9 @@ results <- calculate_copynumber(
 )
 
 # Access results
-head(results$arm_summaries)  # Event-level summaries
-results$matrices$log2_matrix[1:5, 1:5]  # First 5 events × 5 samples
-significant_events <- results$significant_arms  # q < 0.25
-
-# Check validation metrics (expected vs observed)
-head(results$event_validation)
-summary(results$event_validation$recovery_rate)
-
-# Find problematic events
-problematic <- results$event_validation \%>\%
-  filter(match_quality == "Large discrepancy (>20)" | recovery_rate < 80)
+head(results$arm_summaries)
+results$matrices$log2_matrix[1:5, 1:5]
+significant_events <- results$significant_arms
 
 # High-stringency analysis
 results_strict <- calculate_copynumber(

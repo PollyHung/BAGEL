@@ -178,23 +178,6 @@
 #'         }}
 #'   \item{significant_arms}{Data frame. Subset of gistic_results with p<0.05 or q<0.25,
 #'         includes significance_level and effect_size classifications}
-#'   \item{event_validation}{Data frame. Validation metrics comparing expected (n_events
-#'         from BISCUT) vs observed event counts:
-#'         \itemize{
-#'           \item Peak_ID: Functional event identifier
-#'           \item direction: Expected direction (amp/del)
-#'           \item n_events: Expected count from BISCUT
-#'           \item n_observed_matching: Observed count matching expected direction
-#'           \item n_observed_amp: Total samples with amplification
-#'           \item n_observed_del: Total samples with deletion
-#'           \item total_samples: Total samples analyzed
-#'           \item difference: n_observed - n_expected
-#'           \item percent_difference: Percentage difference
-#'           \item match_quality: Classification (Excellent/Good/Acceptable/Large discrepancy)
-#'           \item recovery_rate: Percentage of expected events recovered
-#'           \item over_recovery: Logical, more observed than expected
-#'           \item under_recovery: Logical, fewer than 80% recovery
-#'         }}
 #'   \item{matrices}{List (when create_matrices=TRUE):
 #'         \itemize{
 #'           \item log2_matrix: Matrix (Peak_ID × Sample) with log2 ratios
@@ -221,7 +204,6 @@
 #' When save_results=TRUE, the following files are created in output_dir:
 #' \itemize{
 #'   \item \strong{enhanced_arm_summaries.tsv}: Complete event-level summaries
-#'   \item \strong{event_validation_metrics.tsv}: Expected vs observed event counts
 #'   \item \strong{gistic_statistics.tsv}: GISTIC2 statistical results
 #'   \item \strong{significant_arms.tsv}: Significantly altered events only
 #'   \item \strong{analysis_parameters.tsv}: Parameters used
@@ -249,17 +231,9 @@
 #' )
 #'
 #' # Access results
-#' head(results$arm_summaries)  # Event-level summaries
-#' results$matrices$log2_matrix[1:5, 1:5]  # First 5 events × 5 samples
-#' significant_events <- results$significant_arms  # q < 0.25
-#'
-#' # Check validation metrics (expected vs observed)
-#' head(results$event_validation)
-#' summary(results$event_validation$recovery_rate)
-#'
-#' # Find problematic events
-#' problematic <- results$event_validation %>%
-#'   filter(match_quality == "Large discrepancy (>20)" | recovery_rate < 80)
+#' head(results$arm_summaries)
+#' results$matrices$log2_matrix[1:5, 1:5]
+#' significant_events <- results$significant_arms
 #'
 #' # High-stringency analysis
 #' results_strict <- calculate_copynumber(
@@ -300,8 +274,6 @@ calculate_copynumber <- function(segments,
                                  create_matrices = TRUE,    # NEW: Matrix generation
                                  matrix_formats = "all") {   # NEW: Matrix format control
   
-  cat("Cancer Type:", cancer_type, "\n")
-  cat("Samples:", length(unique(segments$Sample)), "\n")
   
   # ============================================================================
   # LEVEL 1 NESTED FUNCTIONS: Core analysis components
@@ -347,7 +319,6 @@ calculate_copynumber <- function(segments,
         ) %>%
         dplyr::arrange(Sample, Chromosome, Start)
       
-      cat("Segments validation: ", nrow(segment_data), "->", nrow(clean_data), "segments\n")
       return(clean_data)
     }
     
@@ -379,9 +350,7 @@ calculate_copynumber <- function(segments,
              paste(unique(duplicated_ids), collapse = ", "))
       }
 
-      cat("Using updated arm definitions with functional regions\n")
-
-      # NEW: Validate updated format
+      # Validate updated format
       validated_arms <- arm_data %>%
         dplyr::mutate(
           # Ensure chr is numeric (remove "chr" prefix if present)
@@ -677,95 +646,9 @@ calculate_copynumber <- function(segments,
       analysis_params
     )
 
-    # Level 2: Validate observed vs expected event counts
-    # =================================================================
-    # POLLY HUNG ADDITION - 2025-10-02
-    # PURPOSE: Compare n_events (BISCUT expected) with observed counts
-    # WHY: Validate that copy number analysis recovers expected events
-    # =================================================================
-    validate_event_recovery <- function(summaries) {
-      # Check if n_events column exists
-      if (!"n_events" %in% names(summaries)) {
-        cat("Note: n_events column not found, skipping validation\n")
-        return(NULL)
-      }
-
-      validation_metrics <- summaries %>%
-        dplyr::group_by(Peak_ID, direction, n_events) %>%
-        dplyr::summarise(
-          # Count samples that match expected direction
-          n_observed_matching = sum(matches_expected_direction, na.rm = TRUE),
-
-          # Count samples with amplification (regardless of expected)
-          n_observed_amp = sum(mean_log2ratio >= analysis_params$amp_threshold, na.rm = TRUE),
-
-          # Count samples with deletion (regardless of expected)
-          n_observed_del = sum(mean_log2ratio <= analysis_params$del_threshold, na.rm = TRUE),
-
-          # Total samples analyzed for this peak_id
-          total_samples = n(),
-
-          # Mean log2 ratio across samples
-          mean_log2 = mean(mean_log2ratio, na.rm = TRUE),
-
-          .groups = "drop"
-        ) %>%
-        dplyr::mutate(
-          # Expected vs observed comparison
-          n_expected = n_events,
-          difference = n_observed_matching - n_expected,
-          percent_difference = round((difference / n_expected) * 100, 1),
-
-          # Validation classification
-          match_quality = dplyr::case_when(
-            abs(difference) <= 5 ~ "Excellent (±5)",
-            abs(difference) <= 10 ~ "Good (±10)",
-            abs(difference) <= 20 ~ "Acceptable (±20)",
-            TRUE ~ "Large discrepancy (>20)"
-          ),
-
-          # Recovery rate (what % of expected events were recovered)
-          recovery_rate = round((n_observed_matching / n_expected) * 100, 1),
-
-          # Flag over-recovery (more observed than expected)
-          over_recovery = n_observed_matching > n_expected,
-
-          # Flag under-recovery (fewer observed than expected)
-          under_recovery = n_observed_matching < (n_expected * 0.8)  # <80% recovery
-        ) %>%
-        dplyr::arrange(desc(abs(difference)))
-
-      # Print summary statistics
-      cat("\n=== Event Recovery Validation ===\n")
-      cat("Total events validated:", nrow(validation_metrics), "\n")
-      cat("Excellent match (±5):",
-          sum(validation_metrics$match_quality == "Excellent (±5)"), "\n")
-      cat("Good match (±10):",
-          sum(validation_metrics$match_quality == "Good (±10)"), "\n")
-      cat("Acceptable match (±20):",
-          sum(validation_metrics$match_quality == "Acceptable (±20)"), "\n")
-      cat("Large discrepancy (>20):",
-          sum(validation_metrics$match_quality == "Large discrepancy (>20)"), "\n")
-      cat("\nMean recovery rate:",
-          round(mean(validation_metrics$recovery_rate, na.rm = TRUE), 1), "%\n")
-      cat("Median recovery rate:",
-          round(median(validation_metrics$recovery_rate, na.rm = TRUE), 1), "%\n")
-      cat("Events with over-recovery:",
-          sum(validation_metrics$over_recovery, na.rm = TRUE), "\n")
-      cat("Events with under-recovery (<80%):",
-          sum(validation_metrics$under_recovery, na.rm = TRUE), "\n")
-
-      return(validation_metrics)
-    }
-
-    # Main Level 1 logic - create validation metrics
-    cat("Validating event recovery...\n")
-    event_validation <- validate_event_recovery(arm_summaries)
-
     return(list(
       segments = annotated_segments,
       arm_summaries = arm_summaries,
-      event_validation = event_validation,
       n_annotated_segments = nrow(annotated_segments)
     ))
   }
@@ -1327,12 +1210,6 @@ calculate_copynumber <- function(segments,
                          file.path(results_dir, "enhanced_arm_summaries.tsv"))
       }
 
-      # Save event validation metrics
-      if (!is.null(results$event_validation)) {
-        readr::write_tsv(results$event_validation,
-                         file.path(results_dir, "event_validation_metrics.tsv"))
-      }
-
       # Save statistical results
       if (!is.null(results$gistic_results)) {
         readr::write_tsv(results$gistic_results,
@@ -1424,15 +1301,9 @@ calculate_copynumber <- function(segments,
     arm_definitions = prepared_data$arm_definitions,
     gistic_results = statistical_results$gistic_results,
     significant_arms = statistical_results$significant_arms,
-
-    # NEW: Event validation metrics (n_events vs observed)
-    event_validation = analysis_results$event_validation,
-
-    # NEW MATRIX OUTPUTS (when create_matrices=TRUE)
     matrices = if (!is.null(matrix_results)) matrix_results$matrices else NULL,
     matrix_summary = if (!is.null(matrix_results)) matrix_results$summary_stats else NULL,
     matrix_long = if (!is.null(matrix_results)) matrix_results$long_format else NULL,
-
     parameters = analysis_params,
     metadata = list(
       n_samples = prepared_data$n_samples,
@@ -1440,8 +1311,7 @@ calculate_copynumber <- function(segments,
       has_enhanced_arms = prepared_data$has_enhanced_arms,
       n_significant_arms = if(!is.null(statistical_results$significant_arms)) nrow(statistical_results$significant_arms) else 0,
       matrices_created = !is.null(matrix_results),
-      matrix_dimensions = if (!is.null(matrix_results)) paste(matrix_results$metadata$n_arms, "×", matrix_results$metadata$n_samples) else "None",
-      validation_performed = !is.null(analysis_results$event_validation)
+      matrix_dimensions = if (!is.null(matrix_results)) paste(matrix_results$metadata$n_arms, "×", matrix_results$metadata$n_samples) else "None"
     )
   )
   
