@@ -4,7 +4,15 @@
 \alias{run_biscut}
 \title{Run BISCUT Breakpoint Detection Pipeline}
 \usage{
-run_biscut(cancer_folder, results_dir, cores = 4, skip = FALSE, cleanup = TRUE)
+run_biscut(
+  cancer_folder,
+  results_dir,
+  cores = 4,
+  skip = FALSE,
+  cleanup = TRUE,
+  coordinates = NULL,
+  geneloc = NULL
+)
 }
 \arguments{
 \item{cancer_folder}{Character, name of the cancer folder containing segmentation data}

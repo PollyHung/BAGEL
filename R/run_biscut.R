@@ -53,7 +53,9 @@ run_biscut <- function(cancer_folder,
                        results_dir, 
                        cores = 4, 
                        skip = FALSE, 
-                       cleanup = TRUE) {
+                       cleanup = TRUE, 
+                       coordinates = NULL, 
+                       geneloc = NULL) {
   
   # Check if BISCUT package is available
   if (!requireNamespace("BISCUT", quietly = TRUE)) {
@@ -71,99 +73,118 @@ run_biscut <- function(cancer_folder,
   # Check if target file exists 
   biscut_result <- file.exists(file.path(biscut_results_dir, "all_BISCUT_results.txt"))
   
-  if(isFALSE(skip)){
-  
-    # Check if segmentation file exists
-    if (!file.exists(seg_file)) {
-      cat("SKIP - No segmentation file\n")
-      return(list(
-        status = "no_seg_file", 
-        error = "Segmentation file not found", 
-        result = NULL,
-        n_samples = 0,
-        n_segments = 0,
-        breakpoint_created = FALSE,
-        biscut_completed = FALSE
-      ))
-    }
-    
-    # Read basic info about the segmentation file
-    tryCatch({
-      seg_data <- readr::read_tsv(seg_file, show_col_types = FALSE)
-      n_samples <- length(unique(seg_data$Sample))
-      n_segments <- nrow(seg_data)
-    }, error = function(e) {
-      cat("FAILED - Cannot read segmentation file:", e$message, "\n")
-      return(list(
-        status = "read_error",
-        error = paste("Cannot read segmentation file:", e$message),
-        result = NULL,
-        n_samples = 0,
-        n_segments = 0,
-        breakpoint_created = FALSE,
-        biscut_completed = FALSE
-      ))
-    })
-    
-    result <- list(
-      status = "unknown",
-      error = "",
+  # Check if segmentation file exists
+  if (!file.exists(seg_file)) {
+    cat("SKIP - No segmentation file\n")
+    return(list(
+      status = "no_seg_file", 
+      error = "Segmentation file not found", 
       result = NULL,
-      n_samples = n_samples,
-      n_segments = n_segments,
+      n_samples = 0,
+      n_segments = 0,
       breakpoint_created = FALSE,
       biscut_completed = FALSE
-    )
-    
-    # Step 1: Create breakpoint files
-    tryCatch({
-      # Remove existing directories if cleanup requested
-      if (cleanup) {
-        if (dir.exists(breakpoint_dir)) {
-          unlink(breakpoint_dir, recursive = TRUE)
-        }
-        if (dir.exists(biscut_results_dir)) {
-          unlink(biscut_results_dir, recursive = TRUE)
-        }
+    ))
+  }
+  
+  # Read basic info about the segmentation file
+  tryCatch({
+    seg_data <- readr::read_tsv(seg_file, show_col_types = FALSE, col_names = F)
+    n_samples <- length(unique(seg_data$Sample))
+    n_segments <- nrow(seg_data)
+  }, error = function(e) {
+    cat("FAILED - Cannot read segmentation file:", e$message, "\n")
+    return(list(
+      status = "read_error",
+      error = paste("Cannot read segmentation file:", e$message),
+      result = NULL,
+      n_samples = 0,
+      n_segments = 0,
+      breakpoint_created = FALSE,
+      biscut_completed = FALSE
+    ))
+  })
+  
+  result <- list(
+    status = "unknown",
+    error = "",
+    result = NULL,
+    n_samples = n_samples,
+    n_segments = n_segments,
+    breakpoint_created = FALSE,
+    biscut_completed = FALSE
+  )
+  
+  # Step 1: Create breakpoint files
+  tryCatch({
+    # Remove existing directories if cleanup requested
+    if (cleanup) {
+      if (dir.exists(breakpoint_dir)) {
+        unlink(breakpoint_dir, recursive = TRUE)
       }
-      
-      # Create breakpoint files
+      if (dir.exists(biscut_results_dir)) {
+        unlink(biscut_results_dir, recursive = TRUE)
+      }
+    }
+    
+    # Create breakpoint files
+    if(is.null(coordinates)){
+      cat("Running make_breakpoint_files on hg19 reference", "\n")
       BISCUT::make_breakpoint_files(
         segment_file = seg_file,
         output_dir = breakpoint_dir,
         cores = cores
       )
-      
-      result$breakpoint_created <- TRUE
-      
-      # Step 2: Run BISCUT analysis
+    } else {
+      cat("Running make_breakpoint_files on hg38 reference", "\n")
+      BISCUT::make_breakpoint_files(
+        segment_file = seg_file,
+        output_dir = breakpoint_dir,
+        cores = cores, 
+        chromosome_coordinates = coordinates
+      )
+    }
+    
+    
+    result$breakpoint_created <- TRUE
+    
+    # Step 2: Run BISCUT analysis
+    if(is.null(coordinates)){
+      cat("Running do_biscut on hg19 reference", "\n")
       biscut_result <- BISCUT::do_biscut(
         breakpoint_file_dir = breakpoint_dir,
         results_dir = biscut_results_dir,
         cores = cores
       )
-      
-      temp_path <- file.path(biscut_results_dir, "all_BISCUT_results.txt")
-      temp <- read.delim(temp_path, sep = "\t")
-      temp$total_sample_size <- n_samples
-      write.table(temp, temp_path, sep = "\t", quote = F, row.names = F, col.names = T)
-      
-      result$biscut_completed <- TRUE
-      result$status <- "success"
-      result$result <- biscut_result
-      cat("SUCCESS\n")
-      
-    }, error = function(e) {
-      result$status <<- "error"
-      result$error <<- as.character(e$message)
-      cat("FAILED -", e$message, "\n")
-    })
+    } else {
+      cat("Running do_biscut on hg38 reference", "\n")
+      biscut_result <- BISCUT::do_biscut(
+        breakpoint_file_dir = breakpoint_dir,
+        results_dir = biscut_results_dir,
+        cores = cores,
+        chromosome_coordinates = coordinates, 
+        gene_locations = geneloc
+      )
+    }
     
-    return(result)
+    temp_path <- file.path(biscut_results_dir, "all_BISCUT_results.txt")
+    temp <- read.delim(temp_path, sep = "\t")
+    temp$total_sample_size <- n_samples
+    write.table(temp, temp_path, sep = "\t", quote = F, row.names = F, col.names = T)
     
-  } else {
-    message ("BISCUT file exist, use skip=FALSE to force re-execution of BISCUT")
-  }
+    result$biscut_completed <- TRUE
+    result$status <- "success"
+    result$result <- biscut_result
+    cat("SUCCESS\n")
+    
+  }, error = function(e) {
+    result$status <<- "error"
+    result$error <<- as.character(e$message)
+    cat("FAILED -", e$message, "\n")
+  })
+  
+  return(result)
+  
 }
 
 

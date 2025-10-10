@@ -508,7 +508,7 @@ summarise_arm <- function(arm_definitions,
         #   color = "black", linewidth = 0.8, linetype = "dashed", inherit.aes = FALSE
         # ) +
         ggplot2::scale_fill_manual(
-          values = c(setNames(alpha(darken(base_cols, amount = 0.35), 0.7), paste0(names(base_cols), ".tel")),
+          values = c(setNames(alpha(colorspace::darken(base_cols, amount = 0.35), 0.7), paste0(names(base_cols), ".tel")),
                      setNames(alpha(base_cols, 0.7), paste0(names(base_cols), ".cent")))) +
         # ggplot2::scale_x_continuous(
         #   breaks = c(0, 0.25, 0.5, 0.75, 1),
